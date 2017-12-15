@@ -2,9 +2,13 @@ package at.zierler.gradle.internal;
 
 import at.zierler.gradle.YamlValidatorExtension;
 import at.zierler.gradle.YamlValidatorTask;
+import com.esotericsoftware.yamlbeans.YamlConfig;
+import com.esotericsoftware.yamlbeans.YamlReader;
+import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -33,7 +37,26 @@ public class YamlValidatorTaskImpl extends YamlValidatorTask {
 
     private void validateFile(Path file) {
 
-        System.out.println(file.toAbsolutePath().toString() + " is valid.");
+        String absolutePath = file.toAbsolutePath().toString();
+
+        System.out.println("Validating " + absolutePath);
+
+        try (Reader yamlFileReader = Files.newBufferedReader(file)) {
+            YamlReader yamlReader = new YamlReader(yamlFileReader);
+
+            YamlConfig yamlReaderConfig = yamlReader.getConfig();
+            setConfigValues(yamlReaderConfig);
+
+            yamlReader.read();
+        } catch (IOException e) {
+            throw new GradleException("YAML is not valid.", e);
+        }
+
+        System.out.println(absolutePath + " is valid.");
+    }
+
+    private void setConfigValues(YamlConfig yamlReaderConfig) {
+        yamlReaderConfig.setAllowDuplicates(false);
     }
 
 }

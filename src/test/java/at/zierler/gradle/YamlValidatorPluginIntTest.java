@@ -4,7 +4,6 @@ import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.BuildTask;
 import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.TaskOutcome;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -23,9 +22,9 @@ public class YamlValidatorPluginIntTest {
 
     @Rule
     public final TemporaryFolder testProjectDir = new TemporaryFolder();
+
     private String yamlDirectory = "src/test/resources/";
     private File yamlFile;
-    private BuildResult buildResult;
 
     @Before
     public void setupTestProject() throws IOException {
@@ -35,23 +34,17 @@ public class YamlValidatorPluginIntTest {
         yamlFile = testProjectDir.newFile(yamlDirectory + "file.yaml");
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
                 "yamlValidator { directory = '" + yamlDirectory + "' }", buildFile);
+    }
 
-        buildResult = GradleRunner
+    @Test
+    public void shouldSetYamlValidatorFileCorrectly() {
+
+        BuildResult buildResult = GradleRunner
                 .create()
                 .withProjectDir(testProjectDir.getRoot())
                 .withPluginClasspath()
                 .withArguments(TASK_NAME)
                 .build();
-    }
-
-    @After
-    public void printOutput() {
-
-        System.out.println(buildResult.getOutput());
-    }
-
-    @Test
-    public void shouldSetYamlValidatorFileCorrectly() {
 
         String output = buildResult.getOutput();
         BuildTask task = buildResult.task(":" + TASK_NAME);
@@ -61,13 +54,48 @@ public class YamlValidatorPluginIntTest {
     }
 
     @Test
-    public void shouldAllowValidYaml() {
+    public void shouldAllowEmptyYaml() {
+
+        BuildResult buildResult = GradleRunner
+                .create()
+                .withProjectDir(testProjectDir.getRoot())
+                .withPluginClasspath()
+                .withArguments(TASK_NAME)
+                .build();
 
         String output = buildResult.getOutput();
         BuildTask task = buildResult.task(":" + TASK_NAME);
 
         assertThat(output, containsString(yamlFile.getAbsolutePath() + " is valid."));
         assertThat(task.getOutcome(), is(TaskOutcome.SUCCESS));
+    }
+
+    @Test
+    public void shouldNotAllowYamlWithDuplicateKey() {
+
+        writeFile("framework:\n  key: value\n\nframework:\n  other: value", yamlFile);
+
+        GradleRunner
+                .create()
+                .withProjectDir(testProjectDir.getRoot())
+                .withPluginClasspath()
+                .withArguments(TASK_NAME)
+                .buildAndFail();
+    }
+
+    @Test
+    public void shouldAllowValidYaml() {
+
+        writeFile("framework:\n  key: value\n  other: value\n\nother:\n  other: value\n  key: value", yamlFile);
+
+        System.out.println();
+
+        GradleRunner
+                .create()
+                .withProjectDir(testProjectDir.getRoot())
+                .withPluginClasspath()
+                .withArguments(TASK_NAME)
+                .build();
     }
 
 }
