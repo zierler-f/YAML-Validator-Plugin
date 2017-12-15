@@ -1,16 +1,30 @@
 group 'at.zierler'
-version '1.0.1-SNAPSHOT'
+version '1.0.1'
 
 apply plugin: 'java'
 apply plugin: 'java-gradle-plugin'
+apply plugin: "com.gradle.plugin-publish"
 
 sourceCompatibility = 1.8
 
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "com.gradle.publish:plugin-publish-plugin:0.9.9"
+    }
+}
+
 repositories {
-    mavenCentral()
+    jcenter()
 }
 
 dependencies {
+    compile gradleApi()
+
     compile group: 'com.esotericsoftware.yamlbeans', name: 'yamlbeans', version: '1.13'
 
     runtime group: 'com.esotericsoftware.yamlbeans', name: 'yamlbeans', version: '1.13'
@@ -24,6 +38,20 @@ gradlePlugin {
         yaml {
             id = 'at.zierler.yamlvalidator'
             implementationClass = 'at.zierler.gradle.YamlValidatorPlugin'
+        }
+    }
+}
+
+pluginBundle {
+    website = 'https://github.com/zierler-f/YAML-Validator-Plugin'
+    vcsUrl = 'https://github.com/zierler-f/YAML-Validator-Plugin.git'
+    description = 'Validate your YAML files.'
+    tags = ['yaml', 'validations']
+
+    plugins {
+        yaml {
+            id = 'at.zierler.yamlvalidator'
+            displayName = 'YAML Validator Plugin'
         }
     }
 }

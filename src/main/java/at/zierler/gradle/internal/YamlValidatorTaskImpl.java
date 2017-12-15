@@ -32,7 +32,7 @@ public class YamlValidatorTaskImpl extends YamlValidatorTask {
 
     private boolean isYamlFile(Path file) {
 
-        return file.toString().endsWith(".yaml") || file.toString().endsWith(".yaml");
+        return file.toString().endsWith(".yaml") || file.toString().endsWith(".yml");
     }
 
     private void validateFile(Path file) {
