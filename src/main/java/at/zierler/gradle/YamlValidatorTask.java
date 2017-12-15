@@ -6,6 +6,6 @@ import org.gradle.api.tasks.TaskAction;
 public abstract class YamlValidatorTask extends DefaultTask {
 
     @TaskAction
-    public abstract void validateYaml();
+    public abstract void validateYaml() throws Exception;
 
 }
