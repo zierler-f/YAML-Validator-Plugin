@@ -1,6 +1,6 @@
 package at.zierler.gradle.internal;
 
-import at.zierler.gradle.YamlValidatorExtension;
+import at.zierler.gradle.YamlValidatorProperties;
 import at.zierler.gradle.YamlValidatorTask;
 import com.esotericsoftware.yamlbeans.YamlConfig;
 import com.esotericsoftware.yamlbeans.YamlReader;
@@ -18,16 +18,23 @@ public class YamlValidatorTaskImpl extends YamlValidatorTask {
     @TaskAction
     public void validateYaml() throws IOException {
 
-        YamlValidatorExtension extension = getProject().getExtensions().findByType(YamlValidatorExtension.class);
-        if (extension == null) {
-            extension = new YamlValidatorExtension();
-        }
+        YamlValidatorProperties validatorProperties = getYamlValidatorProperties();
 
-        String yamlDirectoryPath = extension.getDirectory();
+        String yamlDirectoryPath = validatorProperties.getDirectory();
         System.out.printf("Starting to validate yaml files in %s.", yamlDirectoryPath);
         System.out.println();
         Path yamlDirectory = getProject().file(yamlDirectoryPath).toPath();
         Files.list(yamlDirectory).filter(this::isYamlFile).forEach(this::validateFile);
+    }
+
+    private YamlValidatorProperties getYamlValidatorProperties() {
+
+        YamlValidatorProperties validatorProperties = getProject().getExtensions().findByType(YamlValidatorProperties.class);
+
+        if (validatorProperties == null) {
+            validatorProperties = YamlValidatorProperties.DEFAULT;
+        }
+        return validatorProperties;
     }
 
     private boolean isYamlFile(Path file) {
@@ -57,7 +64,10 @@ public class YamlValidatorTaskImpl extends YamlValidatorTask {
     }
 
     private void setConfigValues(YamlConfig yamlReaderConfig) {
-        yamlReaderConfig.setAllowDuplicates(false);
+
+        YamlValidatorProperties validatorProperties = getYamlValidatorProperties();
+
+        yamlReaderConfig.setAllowDuplicates(validatorProperties.isAllowDuplicates());
     }
 
 }

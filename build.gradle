@@ -1,5 +1,5 @@
 group 'at.zierler'
-version '1.0.1'
+version '1.0.2'
 
 apply plugin: 'java'
 apply plugin: 'java-gradle-plugin'
@@ -26,6 +26,10 @@ dependencies {
     compile gradleApi()
 
     compile group: 'com.esotericsoftware.yamlbeans', name: 'yamlbeans', version: '1.13'
+
+
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.16.18'
+
 
     runtime group: 'com.esotericsoftware.yamlbeans', name: 'yamlbeans', version: '1.13'
 

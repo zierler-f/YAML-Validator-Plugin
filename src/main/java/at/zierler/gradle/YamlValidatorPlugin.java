@@ -11,7 +11,7 @@ public class YamlValidatorPlugin implements Plugin<Project> {
     @Override
     public void apply(Project project) {
 
-        project.getExtensions().create("yamlValidator", YamlValidatorExtension.class);
+        project.getExtensions().create("yamlValidator", YamlValidatorProperties.class);
         project.getTasks().create(TASK_NAME, YamlValidatorTaskImpl.class);
     }
 

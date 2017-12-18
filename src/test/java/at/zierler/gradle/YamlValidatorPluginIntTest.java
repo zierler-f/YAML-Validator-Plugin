@@ -23,13 +23,14 @@ public class YamlValidatorPluginIntTest {
     @Rule
     public final TemporaryFolder testProjectDir = new TemporaryFolder();
 
+    private File buildFile;
     private String yamlDirectory = "src/test/resources/";
     private File yamlFile;
 
     @Before
     public void setupTestProject() throws IOException {
 
-        File buildFile = testProjectDir.newFile("build.gradle");
+        buildFile = testProjectDir.newFile("build.gradle");
         testProjectDir.newFolder(yamlDirectory.split("/"));
         yamlFile = testProjectDir.newFile(yamlDirectory + "file.yaml");
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
@@ -74,6 +75,11 @@ public class YamlValidatorPluginIntTest {
     public void shouldNotAllowYamlWithDuplicateKey() {
 
         writeFile("framework:\n  key: value\n\nframework:\n  other: value", yamlFile);
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
+                "yamlValidator {\n" +
+                "\tdirectory = '" + yamlDirectory + "'\n" +
+                "\tallowDuplicates = false\n" +
+                "}", buildFile);
 
         BuildResult buildResult = GradleRunner
                 .create()
