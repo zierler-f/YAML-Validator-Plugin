@@ -5,7 +5,9 @@ import lombok.Data;
 @Data
 public class ValidationProperties {
 
-    private String directory = "src/main/resources/";
+    static final String DEFAULT_DIRECTORY = "src/main/resources/";
+
+    private String directory = DEFAULT_DIRECTORY;
     private boolean allowDuplicates = true;
 
 }

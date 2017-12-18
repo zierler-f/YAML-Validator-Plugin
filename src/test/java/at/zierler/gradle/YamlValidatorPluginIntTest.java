@@ -118,7 +118,7 @@ public class YamlValidatorPluginIntTest {
     public void shouldNotFailWhenPropertiesAreNotSet() throws IOException {
 
         writeFile("plugins { id 'at.zierler.yamlvalidator' }", buildFile);
-        String defaultYamlDirectory = "src/main/resources/";
+        String defaultYamlDirectory = ValidationProperties.DEFAULT_DIRECTORY;
         testProjectDir.newFolder(defaultYamlDirectory.split("/"));
 
         BuildResult buildResult = GradleRunner
