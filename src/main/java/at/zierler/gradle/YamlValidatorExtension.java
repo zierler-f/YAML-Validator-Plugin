@@ -12,5 +12,4 @@ public class YamlValidatorExtension {
         this.directory = directory;
     }
 
-
 }

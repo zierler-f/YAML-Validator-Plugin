@@ -32,7 +32,8 @@ public class YamlValidatorTaskImpl extends YamlValidatorTask {
 
     private boolean isYamlFile(Path file) {
 
-        return file.toString().endsWith(".yaml") || file.toString().endsWith(".yml");
+        String fileName = file.toString();
+        return fileName.endsWith(".yaml") || fileName.endsWith(".yml");
     }
 
     private void validateFile(Path file) {
@@ -49,7 +50,7 @@ public class YamlValidatorTaskImpl extends YamlValidatorTask {
 
             yamlReader.read();
         } catch (IOException e) {
-            throw new GradleException("YAML is not valid.", e);
+            throw new GradleException(absolutePath + " is not valid.", e);
         }
 
         System.out.println(absolutePath + " is valid.");

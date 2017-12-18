@@ -75,12 +75,18 @@ public class YamlValidatorPluginIntTest {
 
         writeFile("framework:\n  key: value\n\nframework:\n  other: value", yamlFile);
 
-        GradleRunner
+        BuildResult buildResult = GradleRunner
                 .create()
                 .withProjectDir(testProjectDir.getRoot())
                 .withPluginClasspath()
                 .withArguments(TASK_NAME)
                 .buildAndFail();
+
+        String output = buildResult.getOutput();
+        BuildTask task = buildResult.task(":" + TASK_NAME);
+
+        assertThat(output, containsString(yamlFile.getAbsolutePath() + " is not valid."));
+        assertThat(task.getOutcome(), is(TaskOutcome.FAILED));
     }
 
     @Test
@@ -90,12 +96,18 @@ public class YamlValidatorPluginIntTest {
 
         System.out.println();
 
-        GradleRunner
+        BuildResult buildResult = GradleRunner
                 .create()
                 .withProjectDir(testProjectDir.getRoot())
                 .withPluginClasspath()
                 .withArguments(TASK_NAME)
                 .build();
+
+        String output = buildResult.getOutput();
+        BuildTask task = buildResult.task(":" + TASK_NAME);
+
+        assertThat(output, containsString(yamlFile.getAbsolutePath() + " is valid."));
+        assertThat(task.getOutcome(), is(TaskOutcome.SUCCESS));
     }
 
 }
