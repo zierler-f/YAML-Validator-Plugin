@@ -100,8 +100,6 @@ public class YamlValidatorPluginIntTest {
 
         writeFile("framework:\n  key: value\n  other: value\n\nother:\n  other: value\n  key: value", yamlFile);
 
-        System.out.println();
-
         BuildResult buildResult = GradleRunner
                 .create()
                 .withProjectDir(testProjectDir.getRoot())
@@ -113,6 +111,27 @@ public class YamlValidatorPluginIntTest {
         BuildTask task = buildResult.task(":" + TASK_NAME);
 
         assertThat(output, containsString(yamlFile.getAbsolutePath() + " is valid."));
+        assertThat(task.getOutcome(), is(TaskOutcome.SUCCESS));
+    }
+
+    @Test
+    public void shouldNotFailWhenPropertiesAreNotSet() throws IOException {
+
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }", buildFile);
+        String defaultYamlDirectory = "src/main/resources/";
+        testProjectDir.newFolder(defaultYamlDirectory.split("/"));
+
+        BuildResult buildResult = GradleRunner
+                .create()
+                .withProjectDir(testProjectDir.getRoot())
+                .withPluginClasspath()
+                .withArguments(TASK_NAME)
+                .build();
+
+        String output = buildResult.getOutput();
+        BuildTask task = buildResult.task(":" + TASK_NAME);
+
+        assertThat(output, containsString("Starting to validate yaml files in " + defaultYamlDirectory + "."));
         assertThat(task.getOutcome(), is(TaskOutcome.SUCCESS));
     }
 
