@@ -22,7 +22,7 @@ public class YamlValidatorTask extends DefaultTask {
     @TaskAction
     public void validateYaml() throws IOException {
 
-        String yamlDirectoryPath = validationProperties.getDirectory();
+        String yamlDirectoryPath = validationProperties.getSearchPaths().get(0);
         System.out.printf("Starting to validate yaml files in %s.", yamlDirectoryPath);
         System.out.println();
         Path yamlDirectory = getProject().file(yamlDirectoryPath).toPath();

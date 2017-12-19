@@ -47,7 +47,7 @@ public class YamlValidatorPluginIntTest {
         String overriddenYamlDirectory = "src/test/resources/";
         testProjectDir.newFolder(overriddenYamlDirectory.split("/"));
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
-                "yamlValidator { directory = '" + overriddenYamlDirectory + "' }", buildFile);
+                "yamlValidator { searchPaths = ['" + overriddenYamlDirectory + "'] }", buildFile);
 
         String expectedLineInOutput = "Starting to validate yaml files in " + overriddenYamlDirectory + ".";
 
