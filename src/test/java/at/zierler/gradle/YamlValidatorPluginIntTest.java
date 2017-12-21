@@ -140,6 +140,28 @@ public class YamlValidatorPluginIntTest {
         expectBuildSuccessAndOutput(expectedLineInOutput2);
     }
 
+    @Test
+    public void shouldBeAbleToFindYamlsInFoldersRecursivelyWhenActivated() throws IOException {
+
+        String firstLevelDir = "first/";
+        String secondLevelDir = "first/second/";
+        testProjectDir.newFolder(firstLevelDir.split("/"));
+        testProjectDir.newFolder(secondLevelDir.split("/"));
+        File yamlFile1 = testProjectDir.newFile(firstLevelDir + "file.yaml");
+        File yamlFile2 = testProjectDir.newFile(secondLevelDir + "otherfile.yml");
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
+                "yamlValidator {\n" +
+                "\tsearchPaths = ['" + firstLevelDir + "']\n" +
+                "\tsearchRecursive = true\n" +
+                "}", buildFile);
+
+        String expectedLineInOutput1 = yamlFile1.getAbsolutePath() + " is valid.";
+        String expectedLineInOutput2 = yamlFile2.getAbsolutePath() + " is valid.";
+
+        expectBuildSuccessAndOutput(expectedLineInOutput1);
+        expectBuildSuccessAndOutput(expectedLineInOutput2);
+    }
+
     private void writeDefaultBuildFileWithoutProperties() {
 
         writeFile("plugins { id 'at.zierler.yamlvalidator' }", buildFile);

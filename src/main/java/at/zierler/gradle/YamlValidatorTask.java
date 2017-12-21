@@ -27,7 +27,7 @@ public class YamlValidatorTask extends DefaultTask {
             System.out.println();
             Path searchPath = getProject().file(path).toPath();
             if (Files.isDirectory(searchPath)) {
-                Files.list(searchPath).filter(this::isYamlFile).forEach(this::validateFile);
+                Files.walk(searchPath).filter(this::isYamlFile).forEach(this::validateFile);
             } else if (Files.isRegularFile(searchPath)) {
                 validateFile(searchPath);
             } else {

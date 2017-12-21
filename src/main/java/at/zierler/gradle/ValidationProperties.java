@@ -12,5 +12,6 @@ public class ValidationProperties {
 
     private List<String> searchPaths = Collections.singletonList(DEFAULT_DIRECTORY);
     private boolean allowDuplicates = false;
+    private boolean searchRecursive = false;
 
 }
