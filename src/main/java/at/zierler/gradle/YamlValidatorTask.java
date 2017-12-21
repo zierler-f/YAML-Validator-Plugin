@@ -16,8 +16,8 @@ public class YamlValidatorTask extends DefaultTask {
     static final String STARTING_DIRECTORY_MESSAGE = "Starting validation of YAML files in directory '%s'.";
     static final String STARTING_DIRECTORY_RECURSIVE_MESSAGE = "Starting validation of YAML files in directory '%s' recursively.";
     static final String STARTING_FILE_MESSAGE = "Starting validation of YAML file '%s'.";
-    static final String SUCCESS_MESSAGE = "Validation of YAML file '%s' successful.";
-    static final String FAILURE_MESSAGE = "Validation of YAML file '%s' failed.";
+    static final String FILE_SUCCESS_MESSAGE = "Validation of YAML file '%s' successful.";
+    static final String FILE_FAILURE_MESSAGE = "Validation of YAML file '%s' failed.";
 
     private final ValidationProperties validationProperties;
 
@@ -53,7 +53,7 @@ public class YamlValidatorTask extends DefaultTask {
     private void validateSingleFile(Path file) {
 
         if (isYamlFile(file)) {
-            validateFile(file);
+            validateYamlFile(file);
         }
     }
 
@@ -71,42 +71,50 @@ public class YamlValidatorTask extends DefaultTask {
     private void validateYamlFilesOnlyDirectlyInDirectory(Path directory) throws IOException {
 
         System.out.println(String.format(STARTING_DIRECTORY_MESSAGE, directory));
-        Files.list(directory).filter(this::isYamlFile).forEach(this::validateFile);
+        Files.list(directory).filter(this::isYamlFile).forEach(this::validateYamlFile);
     }
 
     private void validateYamlFilesInDirectoryRecursively(Path directory) throws IOException {
 
         System.out.println(String.format(STARTING_DIRECTORY_RECURSIVE_MESSAGE, directory));
-        Files.walk(directory).filter(this::isYamlFile).forEach(this::validateFile);
+        Files.walk(directory).filter(this::isYamlFile).forEach(this::validateYamlFile);
     }
 
     private boolean isYamlFile(Path file) {
 
-        String fileName = file.toString();
+        String fileName = file.getFileName().toString();
         return fileName.endsWith(".yaml") || fileName.endsWith(".yml");
     }
 
-    private void validateFile(Path file) {
+    private void validateYamlFile(Path file) {
 
         System.out.println(String.format(STARTING_FILE_MESSAGE, file));
 
         try (Reader yamlFileReader = Files.newBufferedReader(file)) {
-            YamlReader yamlReader = new YamlReader(yamlFileReader);
-
-            YamlConfig yamlReaderConfig = yamlReader.getConfig();
-            setConfigValues(yamlReaderConfig);
+            YamlReader yamlReader = setUpYamlReader(yamlFileReader);
 
             yamlReader.read();
         } catch (IOException e) {
-            throw new GradleException(String.format(FAILURE_MESSAGE, file), e);
+            throw new GradleException(String.format(FILE_FAILURE_MESSAGE, file), e);
         }
 
-        System.out.println(String.format(SUCCESS_MESSAGE, file));
+        System.out.println(String.format(FILE_SUCCESS_MESSAGE, file));
     }
 
-    private void setConfigValues(YamlConfig yamlReaderConfig) {
+    private YamlReader setUpYamlReader(Reader yamlFileReader) {
 
-        yamlReaderConfig.setAllowDuplicates(validationProperties.isAllowDuplicates());
+        YamlConfig yamlConfig = setUpYamlConfig();
+        return new YamlReader(yamlFileReader, yamlConfig);
+    }
+
+    private YamlConfig setUpYamlConfig() {
+
+        YamlConfig yamlConfig = new YamlConfig();
+
+        boolean allowDuplicates = validationProperties.isAllowDuplicates();
+        yamlConfig.setAllowDuplicates(allowDuplicates);
+
+        return yamlConfig;
     }
 
 }

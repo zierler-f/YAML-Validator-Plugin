@@ -61,7 +61,7 @@ public class YamlValidatorPluginIntTest {
 
         writeDefaultBuildFileWithoutProperties();
 
-        String expectedLineInOutput = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile.toPath().toRealPath());
+        String expectedLineInOutput = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile.toPath().toRealPath());
 
         expectBuildSuccessAndOutput(expectedLineInOutput);
     }
@@ -76,7 +76,7 @@ public class YamlValidatorPluginIntTest {
                 "\tallowDuplicates = false\n" +
                 "}", buildFile);
 
-        String expectedLineInOutput = String.format(YamlValidatorTask.FAILURE_MESSAGE, yamlFile.toPath().toRealPath());
+        String expectedLineInOutput = String.format(YamlValidatorTask.FILE_FAILURE_MESSAGE, yamlFile.toPath().toRealPath());
 
         expectBuildFailureAndOutput(expectedLineInOutput);
     }
@@ -90,7 +90,7 @@ public class YamlValidatorPluginIntTest {
                 "\tallowDuplicates = true\n" +
                 "}", buildFile);
 
-        String expectedLineInOutput = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile.toPath().toRealPath());
+        String expectedLineInOutput = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile.toPath().toRealPath());
 
         expectBuildSuccessAndOutput(expectedLineInOutput);
     }
@@ -101,7 +101,7 @@ public class YamlValidatorPluginIntTest {
         writeDefaultBuildFileWithoutProperties();
         writeFile("framework:\n  key: value\n  other: value\n\nother:\n  other: value\n  key: value", yamlFile);
 
-        String expectedLineInOutput = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile.toPath().toRealPath());
+        String expectedLineInOutput = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile.toPath().toRealPath());
 
         expectBuildSuccessAndOutput(expectedLineInOutput);
     }
@@ -159,8 +159,8 @@ public class YamlValidatorPluginIntTest {
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
                 "yamlValidator { searchPaths = ['" + yamlDirectory + "','" + yamlFile2 + "'] }", buildFile);
 
-        String expectedLineInOutput1 = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile1.toPath().toRealPath());
-        String expectedLineInOutput2 = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile2.toPath().toRealPath());
+        String expectedLineInOutput1 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile1.toPath().toRealPath());
+        String expectedLineInOutput2 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile2.toPath().toRealPath());
 
         String output = runBuildAndGetOutput();
 
@@ -183,8 +183,8 @@ public class YamlValidatorPluginIntTest {
                 "\tsearchRecursive = true\n" +
                 "}", buildFile);
 
-        String expectedLineInOutput1 = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile1.toPath().toRealPath());
-        String expectedLineInOutput2 = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile2.toPath().toRealPath());
+        String expectedLineInOutput1 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile1.toPath().toRealPath());
+        String expectedLineInOutput2 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile2.toPath().toRealPath());
 
         String output = runBuildAndGetOutput();
 
@@ -207,8 +207,8 @@ public class YamlValidatorPluginIntTest {
                 "\tsearchRecursive = false\n" +
                 "}", buildFile);
 
-        String expectedLineInOutput = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile1.toPath().toRealPath());
-        String unexpectedLineInOutput = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile2.toPath().toRealPath());
+        String expectedLineInOutput = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile1.toPath().toRealPath());
+        String unexpectedLineInOutput = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile2.toPath().toRealPath());
 
         expectBuildSuccessAndOutputButNotOtherOutput(expectedLineInOutput, unexpectedLineInOutput);
     }
