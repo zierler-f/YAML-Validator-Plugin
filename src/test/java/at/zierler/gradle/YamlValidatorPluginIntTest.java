@@ -60,7 +60,7 @@ public class YamlValidatorPluginIntTest {
 
         writeDefaultBuildFileWithoutProperties();
 
-        String expectedLineInOutput = yamlFile.getAbsolutePath() + " is valid.";
+        String expectedLineInOutput = yamlFile + " is valid.";
 
         expectBuildSuccessAndOutput(expectedLineInOutput);
     }
@@ -75,7 +75,7 @@ public class YamlValidatorPluginIntTest {
                 "\tallowDuplicates = false\n" +
                 "}", buildFile);
 
-        String expectedLineInOutput = yamlFile.getAbsolutePath() + " is not valid.";
+        String expectedLineInOutput = yamlFile + " is not valid.";
 
         expectBuildFailureAndOutput(expectedLineInOutput);
     }
@@ -89,7 +89,7 @@ public class YamlValidatorPluginIntTest {
                 "\tallowDuplicates = true\n" +
                 "}", buildFile);
 
-        String expectedLineInOutput = yamlFile.getAbsolutePath() + " is valid.";
+        String expectedLineInOutput = yamlFile + " is valid.";
 
         expectBuildSuccessAndOutput(expectedLineInOutput);
     }
@@ -100,7 +100,7 @@ public class YamlValidatorPluginIntTest {
         writeDefaultBuildFileWithoutProperties();
         writeFile("framework:\n  key: value\n  other: value\n\nother:\n  other: value\n  key: value", yamlFile);
 
-        String expectedLineInOutput = yamlFile.getAbsolutePath() + " is valid.";
+        String expectedLineInOutput = yamlFile + " is valid.";
 
         expectBuildSuccessAndOutput(expectedLineInOutput);
     }
@@ -136,8 +136,8 @@ public class YamlValidatorPluginIntTest {
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
                 "yamlValidator { searchPaths = ['" + yamlDirectory + "','" + yamlFile2 + "'] }", buildFile);
 
-        String expectedLineInOutput1 = yamlFile1.getAbsolutePath() + " is valid.";
-        String expectedLineInOutput2 = yamlFile2.getAbsolutePath() + " is valid.";
+        String expectedLineInOutput1 = yamlFile1 + " is valid.";
+        String expectedLineInOutput2 = yamlFile2 + " is valid.";
 
         String output = runBuildAndGetOutput();
 
@@ -160,8 +160,8 @@ public class YamlValidatorPluginIntTest {
                 "\tsearchRecursive = true\n" +
                 "}", buildFile);
 
-        String expectedLineInOutput1 = yamlFile1.getAbsolutePath() + " is valid.";
-        String expectedLineInOutput2 = yamlFile2.getAbsolutePath() + " is valid.";
+        String expectedLineInOutput1 = yamlFile1 + " is valid.";
+        String expectedLineInOutput2 = yamlFile2 + " is valid.";
 
         String output = runBuildAndGetOutput();
 
@@ -184,8 +184,8 @@ public class YamlValidatorPluginIntTest {
                 "\tsearchRecursive = false\n" +
                 "}", buildFile);
 
-        String expectedLineInOutput = yamlFile1.getAbsolutePath() + " is valid.";
-        String unexpectedLineInOutput = yamlFile2.getAbsolutePath() + " is valid.";
+        String expectedLineInOutput = yamlFile1 + " is valid.";
+        String unexpectedLineInOutput = yamlFile2 + " is valid.";
 
         String output = runBuildAndGetOutput();
 
@@ -203,10 +203,55 @@ public class YamlValidatorPluginIntTest {
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
                 "yamlValidator { searchPaths = ['" + anyTxtFile + "'] }", buildFile);
 
-        String unexpectedLineInOutput = "Validating " + anyTxtFile.getAbsolutePath();
+        String unexpectedLineInOutput = "Validating " + anyTxtFile;
 
         String output = runBuildAndGetOutput();
 
+        assertThat(output, not(containsString(unexpectedLineInOutput)));
+    }
+
+    @Test
+    public void shouldNotValidateFileWithNonYamlEndingButValidateYamlFileInSameDirectory() throws IOException {
+
+        String directory = "src/test/resources/";
+        testProjectDir.newFolder(directory.split("/"));
+        String anyTxtFilePath = directory + "file.jpg";
+        File anyTxtFile = testProjectDir.newFile(anyTxtFilePath);
+        String anyYamlFilePath = directory + "application.yml";
+        File anyYamlFile = testProjectDir.newFile(anyYamlFilePath);
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
+                "yamlValidator { searchPaths = ['" + directory + "'] }", buildFile);
+
+        String expectedLineInOutput = "Validating " + anyYamlFile.toPath().toRealPath();
+        String unexpectedLineInOutput = "Validating " + anyTxtFile.toPath().toRealPath();
+
+        String output = runBuildAndGetOutput();
+
+        assertThat(output, containsString(expectedLineInOutput));
+        assertThat(output, not(containsString(unexpectedLineInOutput)));
+    }
+
+    @Test
+    public void shouldNotValidateNonYamlFileRecursivelyWhenActivated() throws IOException {
+
+        String firstLevelDir = "first/";
+        String secondLevelDir = "first/second/";
+        testProjectDir.newFolder(firstLevelDir.split("/"));
+        testProjectDir.newFolder(secondLevelDir.split("/"));
+        File yamlFile = testProjectDir.newFile(firstLevelDir + "file.yaml");
+        File nonYamlFile = testProjectDir.newFile(secondLevelDir + "otherfile.gradle");
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
+                "yamlValidator {\n" +
+                "\tsearchPaths = ['" + firstLevelDir + "']\n" +
+                "\tsearchRecursive = true\n" +
+                "}", buildFile);
+
+        String expectedLineInOutput = "Validating " + yamlFile.toPath().toRealPath();
+        String unexpectedLineInOutput = "Validating " + nonYamlFile.toPath().toRealPath();
+
+        String output = runBuildAndGetOutput();
+
+        assertThat(output, containsString(expectedLineInOutput));
         assertThat(output, not(containsString(unexpectedLineInOutput)));
     }
 
