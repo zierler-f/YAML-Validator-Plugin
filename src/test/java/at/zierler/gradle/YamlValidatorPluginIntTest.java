@@ -104,6 +104,22 @@ public class YamlValidatorPluginIntTest {
         expectBuildSuccessAndOutput(expectedLineInOutput);
     }
 
+    @Test
+    public void shouldSearchInMultipleFolderWhenDefined() throws IOException {
+
+        String yamlDirectory1 = "src/any/resources/";
+        String yamlDirectory2 = "src/other/resources/";
+        testProjectDir.newFolder(yamlDirectory1.split("/"));
+        testProjectDir.newFolder(yamlDirectory2.split("/"));
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" + "yamlValidator { searchPaths = ['" + yamlDirectory1 + "','" + yamlDirectory2 + "'] }", buildFile);
+
+        String expectedLineInOutput1 = "Starting to validate yaml files in " + yamlDirectory1 + ".";
+        String expectedLineInOutput2 = "Starting to validate yaml files in " + yamlDirectory2 + ".";
+
+        expectBuildSuccessAndOutput(expectedLineInOutput1);
+        expectBuildSuccessAndOutput(expectedLineInOutput2);
+    }
+
     private void writeDefaultBuildFileWithoutProperties() {
 
         writeFile("plugins { id 'at.zierler.yamlvalidator' }", buildFile);
