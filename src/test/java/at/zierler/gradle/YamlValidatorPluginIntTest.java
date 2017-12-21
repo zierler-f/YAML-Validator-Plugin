@@ -13,6 +13,7 @@ import static at.zierler.gradle.YamlValidatorPlugin.TASK_NAME;
 import static org.gradle.util.GFileUtils.writeFile;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsNot.not;
 
 public class YamlValidatorPluginIntTest {
 
@@ -166,6 +167,30 @@ public class YamlValidatorPluginIntTest {
 
         assertThat(output, containsString(expectedLineInOutput1));
         assertThat(output, containsString(expectedLineInOutput2));
+    }
+
+    @Test
+    public void shouldNotBeAbleToFindYamlsInFoldersRecursivelyWhenActivated() throws IOException {
+
+        String firstLevelDir = "first/";
+        String secondLevelDir = "first/second/";
+        testProjectDir.newFolder(firstLevelDir.split("/"));
+        testProjectDir.newFolder(secondLevelDir.split("/"));
+        File yamlFile1 = testProjectDir.newFile(firstLevelDir + "file.yaml");
+        File yamlFile2 = testProjectDir.newFile(secondLevelDir + "otherfile.yml");
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
+                "yamlValidator {\n" +
+                "\tsearchPaths = ['" + firstLevelDir + "']\n" +
+                "\tsearchRecursive = false\n" +
+                "}", buildFile);
+
+        String expectedLineInOutput1 = yamlFile1.getAbsolutePath() + " is valid.";
+        String expectedLineInOutput2 = yamlFile2.getAbsolutePath() + " is valid.";
+
+        String output = runBuildAndGetOutput();
+
+        assertThat(output, containsString(expectedLineInOutput1));
+        assertThat(output, not(containsString(expectedLineInOutput2)));
     }
 
     private void writeDefaultBuildFileWithoutProperties() {
