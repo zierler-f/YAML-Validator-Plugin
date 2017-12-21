@@ -21,23 +21,24 @@ public class YamlValidatorPluginIntTest {
     public final TemporaryFolder testProjectDir = new TemporaryFolder();
 
     private File buildFile;
-    private String yamlDirectory = ValidationProperties.DEFAULT_DIRECTORY;
+    private File yamlDirectory;
     private File yamlFile;
 
     @Before
     public void setupTestProject() throws IOException {
 
         this.buildFile = testProjectDir.newFile("build.gradle");
-        testProjectDir.newFolder(yamlDirectory.split("/"));
-        this.yamlFile = testProjectDir.newFile(yamlDirectory + "file.yaml");
+        String yamlDirectoryRelativePath = ValidationProperties.DEFAULT_DIRECTORY;
+        this.yamlDirectory = testProjectDir.newFolder(yamlDirectoryRelativePath.split("/"));
+        this.yamlFile = testProjectDir.newFile(yamlDirectoryRelativePath + "file.yaml");
     }
 
     @Test
-    public void shouldUseDefaultSearchPathsWhenNotOverridden() {
+    public void shouldUseDefaultSearchPathsWhenNotOverridden() throws IOException {
 
         writeDefaultBuildFileWithoutProperties();
 
-        String expectedLineInOutput = "Starting to validate yaml files in " + yamlDirectory + ".";
+        String expectedLineInOutput = String.format(YamlValidatorTask.STARTING_DIRECTORY_MESSAGE, yamlDirectory.toPath().toRealPath());
 
         expectBuildSuccessAndOutput(expectedLineInOutput);
     }
@@ -45,12 +46,12 @@ public class YamlValidatorPluginIntTest {
     @Test
     public void shouldUseDefinedSearchPathWhenOverridden() throws IOException {
 
-        String overriddenYamlDirectory = "src/test/resources/";
-        testProjectDir.newFolder(overriddenYamlDirectory.split("/"));
+        String overriddenYamlDirectoryPath = "src/test/resources/";
+        File overridenYamlDirectory = testProjectDir.newFolder(overriddenYamlDirectoryPath.split("/"));
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
-                "yamlValidator { searchPaths = ['" + overriddenYamlDirectory + "'] }", buildFile);
+                "yamlValidator { searchPaths = ['" + overriddenYamlDirectoryPath + "'] }", buildFile);
 
-        String expectedLineInOutput = "Starting to validate yaml files in " + overriddenYamlDirectory + ".";
+        String expectedLineInOutput = String.format(YamlValidatorTask.STARTING_DIRECTORY_MESSAGE, overridenYamlDirectory.toPath().toRealPath());
 
         expectBuildSuccessAndOutput(expectedLineInOutput);
     }
@@ -106,17 +107,39 @@ public class YamlValidatorPluginIntTest {
     }
 
     @Test
-    public void shouldSearchInMultipleFolderWhenDefined() throws IOException {
+    public void shouldSearchInMultipleFoldersWhenDefined() throws IOException {
 
-        String yamlDirectory1 = "src/any/resources/";
-        String yamlDirectory2 = "src/other/resources/";
-        testProjectDir.newFolder(yamlDirectory1.split("/"));
-        testProjectDir.newFolder(yamlDirectory2.split("/"));
+        String yamlDirectory1Path = "src/any/resources/";
+        String yamlDirectory2Path = "src/other/resources/";
+        File yamlDirectory1 = testProjectDir.newFolder(yamlDirectory1Path.split("/"));
+        File yamlDirectory2 = testProjectDir.newFolder(yamlDirectory2Path.split("/"));
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
-                "yamlValidator { searchPaths = ['" + yamlDirectory1 + "','" + yamlDirectory2 + "'] }", buildFile);
+                "yamlValidator { searchPaths = ['" + yamlDirectory1Path + "','" + yamlDirectory2Path + "'] }", buildFile);
 
-        String expectedLineInOutput1 = "Starting to validate yaml files in " + yamlDirectory1 + ".";
-        String expectedLineInOutput2 = "Starting to validate yaml files in " + yamlDirectory2 + ".";
+        String expectedLineInOutput1 = String.format(YamlValidatorTask.STARTING_DIRECTORY_MESSAGE, yamlDirectory1.toPath().toRealPath());
+        String expectedLineInOutput2 = String.format(YamlValidatorTask.STARTING_DIRECTORY_MESSAGE, yamlDirectory2.toPath().toRealPath());
+
+        String output = runBuildAndGetOutput();
+
+        assertThat(output, containsString(expectedLineInOutput1));
+        assertThat(output, containsString(expectedLineInOutput2));
+    }
+
+    @Test
+    public void shouldSearchInMultipleFoldersRecursivelyWhenDefined() throws IOException {
+
+        String yamlDirectory1Path = "src/any/resources/";
+        String yamlDirectory2Path = "src/other/resources/";
+        File yamlDirectory1 = testProjectDir.newFolder(yamlDirectory1Path.split("/"));
+        File yamlDirectory2 = testProjectDir.newFolder(yamlDirectory2Path.split("/"));
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
+                "yamlValidator {\n" +
+                "searchPaths = ['" + yamlDirectory1Path + "','" + yamlDirectory2Path + "']\n" +
+                "searchRecursive = true\n" +
+                "}", buildFile);
+
+        String expectedLineInOutput1 = String.format(YamlValidatorTask.STARTING_DIRECTORY_RECURSIVE_MESSAGE, yamlDirectory1.toPath().toRealPath());
+        String expectedLineInOutput2 = String.format(YamlValidatorTask.STARTING_DIRECTORY_RECURSIVE_MESSAGE, yamlDirectory2.toPath().toRealPath());
 
         String output = runBuildAndGetOutput();
 
@@ -187,10 +210,7 @@ public class YamlValidatorPluginIntTest {
         String expectedLineInOutput = yamlFile1 + " is valid.";
         String unexpectedLineInOutput = yamlFile2 + " is valid.";
 
-        String output = runBuildAndGetOutput();
-
-        assertThat(output, containsString(expectedLineInOutput));
-        assertThat(output, not(containsString(unexpectedLineInOutput)));
+        expectBuildSuccessAndOutputButNotOtherOutput(expectedLineInOutput, unexpectedLineInOutput);
     }
 
     @Test
@@ -225,10 +245,7 @@ public class YamlValidatorPluginIntTest {
         String expectedLineInOutput = "Validating " + anyYamlFile.toPath().toRealPath();
         String unexpectedLineInOutput = "Validating " + anyTxtFile.toPath().toRealPath();
 
-        String output = runBuildAndGetOutput();
-
-        assertThat(output, containsString(expectedLineInOutput));
-        assertThat(output, not(containsString(unexpectedLineInOutput)));
+        expectBuildSuccessAndOutputButNotOtherOutput(expectedLineInOutput, unexpectedLineInOutput);
     }
 
     @Test
@@ -249,10 +266,7 @@ public class YamlValidatorPluginIntTest {
         String expectedLineInOutput = "Validating " + yamlFile.toPath().toRealPath();
         String unexpectedLineInOutput = "Validating " + nonYamlFile.toPath().toRealPath();
 
-        String output = runBuildAndGetOutput();
-
-        assertThat(output, containsString(expectedLineInOutput));
-        assertThat(output, not(containsString(unexpectedLineInOutput)));
+        expectBuildSuccessAndOutputButNotOtherOutput(expectedLineInOutput, unexpectedLineInOutput);
     }
 
     private void writeDefaultBuildFileWithoutProperties() {
@@ -277,6 +291,15 @@ public class YamlValidatorPluginIntTest {
         String output = runBuildExpectedToFailAndGetOutput();
 
         assertThat(output, containsString(expectedLineInOutput));
+    }
+
+
+    private void expectBuildSuccessAndOutputButNotOtherOutput(String expectedLineInOutput, String unexpectedLineInOutput) {
+
+        String output = runBuildAndGetOutput();
+
+        assertThat(output, containsString(expectedLineInOutput));
+        assertThat(output, not(containsString(unexpectedLineInOutput)));
     }
 
     private String runBuildAndGetOutput() {
