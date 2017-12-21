@@ -57,18 +57,18 @@ public class YamlValidatorPluginIntTest {
     }
 
     @Test
-    public void shouldAllowEmptyYaml() {
+    public void shouldAllowEmptyYaml() throws IOException {
 
         writeDefaultBuildFileWithoutProperties();
 
-        String expectedLineInOutput = yamlFile + " is valid.";
+        String expectedLineInOutput = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile.toPath().toRealPath());
 
         expectBuildSuccessAndOutput(expectedLineInOutput);
     }
 
 
     @Test
-    public void shouldNotAllowYamlWithDuplicateKeyWhenDuplicationIsEnabled() {
+    public void shouldNotAllowYamlWithDuplicateKeyWhenDuplicationIsEnabled() throws IOException {
 
         writeDuplicateKeyYaml();
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
@@ -76,13 +76,13 @@ public class YamlValidatorPluginIntTest {
                 "\tallowDuplicates = false\n" +
                 "}", buildFile);
 
-        String expectedLineInOutput = yamlFile + " is not valid.";
+        String expectedLineInOutput = String.format(YamlValidatorTask.FAILURE_MESSAGE, yamlFile.toPath().toRealPath());
 
         expectBuildFailureAndOutput(expectedLineInOutput);
     }
 
     @Test
-    public void shouldAllowYamlWithDuplicateKeyWhenDuplicationIsDisabled() {
+    public void shouldAllowYamlWithDuplicateKeyWhenDuplicationIsDisabled() throws IOException {
 
         writeDuplicateKeyYaml();
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
@@ -90,18 +90,18 @@ public class YamlValidatorPluginIntTest {
                 "\tallowDuplicates = true\n" +
                 "}", buildFile);
 
-        String expectedLineInOutput = yamlFile + " is valid.";
+        String expectedLineInOutput = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile.toPath().toRealPath());
 
         expectBuildSuccessAndOutput(expectedLineInOutput);
     }
 
     @Test
-    public void shouldAllowValidYaml() {
+    public void shouldAllowValidYaml() throws IOException {
 
         writeDefaultBuildFileWithoutProperties();
         writeFile("framework:\n  key: value\n  other: value\n\nother:\n  other: value\n  key: value", yamlFile);
 
-        String expectedLineInOutput = yamlFile + " is valid.";
+        String expectedLineInOutput = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile.toPath().toRealPath());
 
         expectBuildSuccessAndOutput(expectedLineInOutput);
     }
@@ -159,8 +159,8 @@ public class YamlValidatorPluginIntTest {
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
                 "yamlValidator { searchPaths = ['" + yamlDirectory + "','" + yamlFile2 + "'] }", buildFile);
 
-        String expectedLineInOutput1 = yamlFile1 + " is valid.";
-        String expectedLineInOutput2 = yamlFile2 + " is valid.";
+        String expectedLineInOutput1 = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile1.toPath().toRealPath());
+        String expectedLineInOutput2 = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile2.toPath().toRealPath());
 
         String output = runBuildAndGetOutput();
 
@@ -183,8 +183,8 @@ public class YamlValidatorPluginIntTest {
                 "\tsearchRecursive = true\n" +
                 "}", buildFile);
 
-        String expectedLineInOutput1 = yamlFile1 + " is valid.";
-        String expectedLineInOutput2 = yamlFile2 + " is valid.";
+        String expectedLineInOutput1 = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile1.toPath().toRealPath());
+        String expectedLineInOutput2 = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile2.toPath().toRealPath());
 
         String output = runBuildAndGetOutput();
 
@@ -207,8 +207,8 @@ public class YamlValidatorPluginIntTest {
                 "\tsearchRecursive = false\n" +
                 "}", buildFile);
 
-        String expectedLineInOutput = yamlFile1 + " is valid.";
-        String unexpectedLineInOutput = yamlFile2 + " is valid.";
+        String expectedLineInOutput = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile1.toPath().toRealPath());
+        String unexpectedLineInOutput = String.format(YamlValidatorTask.SUCCESS_MESSAGE, yamlFile2.toPath().toRealPath());
 
         expectBuildSuccessAndOutputButNotOtherOutput(expectedLineInOutput, unexpectedLineInOutput);
     }
@@ -223,7 +223,7 @@ public class YamlValidatorPluginIntTest {
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
                 "yamlValidator { searchPaths = ['" + anyTxtFile + "'] }", buildFile);
 
-        String unexpectedLineInOutput = "Validating " + anyTxtFile;
+        String unexpectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, anyTxtFile.toPath().toRealPath());
 
         String output = runBuildAndGetOutput();
 
@@ -242,8 +242,8 @@ public class YamlValidatorPluginIntTest {
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
                 "yamlValidator { searchPaths = ['" + directory + "'] }", buildFile);
 
-        String expectedLineInOutput = "Validating " + anyYamlFile.toPath().toRealPath();
-        String unexpectedLineInOutput = "Validating " + anyTxtFile.toPath().toRealPath();
+        String expectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, anyYamlFile.toPath().toRealPath());
+        String unexpectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, anyTxtFile.toPath().toRealPath());
 
         expectBuildSuccessAndOutputButNotOtherOutput(expectedLineInOutput, unexpectedLineInOutput);
     }
@@ -263,8 +263,8 @@ public class YamlValidatorPluginIntTest {
                 "\tsearchRecursive = true\n" +
                 "}", buildFile);
 
-        String expectedLineInOutput = "Validating " + yamlFile.toPath().toRealPath();
-        String unexpectedLineInOutput = "Validating " + nonYamlFile.toPath().toRealPath();
+        String expectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, yamlFile.toPath().toRealPath());
+        String unexpectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, nonYamlFile.toPath().toRealPath());
 
         expectBuildSuccessAndOutputButNotOtherOutput(expectedLineInOutput, unexpectedLineInOutput);
     }

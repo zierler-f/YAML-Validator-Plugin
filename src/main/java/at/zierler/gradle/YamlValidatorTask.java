@@ -18,6 +18,7 @@ public class YamlValidatorTask extends DefaultTask {
     static final String STARTING_FILE_MESSAGE = "Starting validation of YAML file '%s'.";
     static final String SUCCESS_MESSAGE = "Validation of YAML file '%s' successful.";
     static final String FAILURE_MESSAGE = "Validation of YAML file '%s' failed.";
+
     private final ValidationProperties validationProperties;
 
     public YamlValidatorTask() {
@@ -33,9 +34,9 @@ public class YamlValidatorTask extends DefaultTask {
         }
     }
 
-    private Path resolveFileOrDirectoryByPath(String path) {
+    private Path resolveFileOrDirectoryByPath(String path) throws IOException {
 
-        return getProject().file(path).toPath();
+        return getProject().file(path).toPath().toAbsolutePath().toRealPath();
     }
 
     private void checkFileOrDirectory(Path fileOrDirectory) throws IOException {
@@ -87,9 +88,7 @@ public class YamlValidatorTask extends DefaultTask {
 
     private void validateFile(Path file) {
 
-        String absolutePath = file.toAbsolutePath().toString();
-
-        System.out.println("Validating " + absolutePath);
+        System.out.println(String.format(STARTING_FILE_MESSAGE, file));
 
         try (Reader yamlFileReader = Files.newBufferedReader(file)) {
             YamlReader yamlReader = new YamlReader(yamlFileReader);
@@ -99,10 +98,10 @@ public class YamlValidatorTask extends DefaultTask {
 
             yamlReader.read();
         } catch (IOException e) {
-            throw new GradleException(absolutePath + " is not valid.", e);
+            throw new GradleException(String.format(FAILURE_MESSAGE, file), e);
         }
 
-        System.out.println(absolutePath + " is valid.");
+        System.out.println(String.format(SUCCESS_MESSAGE, file));
     }
 
     private void setConfigValues(YamlConfig yamlReaderConfig) {
