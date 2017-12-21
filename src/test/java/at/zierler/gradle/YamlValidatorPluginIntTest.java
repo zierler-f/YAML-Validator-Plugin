@@ -117,8 +117,10 @@ public class YamlValidatorPluginIntTest {
         String expectedLineInOutput1 = "Starting to validate yaml files in " + yamlDirectory1 + ".";
         String expectedLineInOutput2 = "Starting to validate yaml files in " + yamlDirectory2 + ".";
 
-        expectBuildSuccessAndOutput(expectedLineInOutput1);
-        expectBuildSuccessAndOutput(expectedLineInOutput2);
+        String output = runBuildAndGetOutput();
+
+        assertThat(output, containsString(expectedLineInOutput1));
+        assertThat(output, containsString(expectedLineInOutput2));
     }
 
     @Test
@@ -136,8 +138,10 @@ public class YamlValidatorPluginIntTest {
         String expectedLineInOutput1 = yamlFile1.getAbsolutePath() + " is valid.";
         String expectedLineInOutput2 = yamlFile2.getAbsolutePath() + " is valid.";
 
-        expectBuildSuccessAndOutput(expectedLineInOutput1);
-        expectBuildSuccessAndOutput(expectedLineInOutput2);
+        String output = runBuildAndGetOutput();
+
+        assertThat(output, containsString(expectedLineInOutput1));
+        assertThat(output, containsString(expectedLineInOutput2));
     }
 
     @Test
@@ -158,8 +162,10 @@ public class YamlValidatorPluginIntTest {
         String expectedLineInOutput1 = yamlFile1.getAbsolutePath() + " is valid.";
         String expectedLineInOutput2 = yamlFile2.getAbsolutePath() + " is valid.";
 
-        expectBuildSuccessAndOutput(expectedLineInOutput1);
-        expectBuildSuccessAndOutput(expectedLineInOutput2);
+        String output = runBuildAndGetOutput();
+
+        assertThat(output, containsString(expectedLineInOutput1));
+        assertThat(output, containsString(expectedLineInOutput2));
     }
 
     private void writeDefaultBuildFileWithoutProperties() {
