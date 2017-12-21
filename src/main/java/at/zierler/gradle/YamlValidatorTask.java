@@ -20,20 +20,25 @@ public class YamlValidatorTask extends DefaultTask {
     }
 
     @TaskAction
-    public void validateYaml() throws IOException {
+    public void validateAllProvidedFilesAndDirectories() throws IOException {
 
         for (String path : validationProperties.getSearchPaths()) {
-            System.out.printf("Starting to validate yaml files in %s.", path);
-            System.out.println();
-            Path searchPath = getProject().file(path).toPath();
-            if (Files.isDirectory(searchPath)) {
-                if (validationProperties.isSearchRecursive()) {
-                    Files.walk(searchPath).filter(this::isYamlFile).forEach(this::validateFile);
+            System.out.println(String.format("Starting to validate yaml files in %s.", path));
+            Path fileOrDirectory = getProject().file(path).toPath();
+            if (Files.isDirectory(fileOrDirectory)) {
+                Path directory = fileOrDirectory;
+                boolean shouldSearchForYamlFilesRecursively = validationProperties.isSearchRecursive();
+                if (shouldSearchForYamlFilesRecursively) {
+                    Files.walk(directory).filter(this::isYamlFile).forEach(this::validateFile);
                 } else {
-                    Files.list(searchPath).filter(this::isYamlFile).forEach(this::validateFile);
+                    Files.list(directory).filter(this::isYamlFile).forEach(this::validateFile);
                 }
-            } else if (Files.isRegularFile(searchPath)) {
-                validateFile(searchPath);
+            } else if (Files.isRegularFile(fileOrDirectory)) {
+                Path file = fileOrDirectory;
+                if (isYamlFile(file)) {
+                    Path yamlFile = file;
+                    validateFile(fileOrDirectory);
+                }
             } else {
                 throw new IllegalStateException(String.format("File at path %s is neither a file nor a directory.", path));
             }
