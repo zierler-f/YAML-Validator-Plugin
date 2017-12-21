@@ -22,11 +22,17 @@ public class YamlValidatorTask extends DefaultTask {
     @TaskAction
     public void validateYaml() throws IOException {
 
-        for (String yamlDirectoryPath : validationProperties.getSearchPaths()) {
-            System.out.printf("Starting to validate yaml files in %s.", yamlDirectoryPath);
+        for (String path : validationProperties.getSearchPaths()) {
+            System.out.printf("Starting to validate yaml files in %s.", path);
             System.out.println();
-            Path yamlDirectory = getProject().file(yamlDirectoryPath).toPath();
-            Files.list(yamlDirectory).filter(this::isYamlFile).forEach(this::validateFile);
+            Path searchPath = getProject().file(path).toPath();
+            if (Files.isDirectory(searchPath)) {
+                Files.list(searchPath).filter(this::isYamlFile).forEach(this::validateFile);
+            } else if (Files.isRegularFile(searchPath)) {
+                validateFile(searchPath);
+            } else {
+                throw new IllegalStateException(String.format("File at path %s is neither a file nor a directory.", path));
+            }
         }
     }
 

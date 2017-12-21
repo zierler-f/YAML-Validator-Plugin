@@ -111,10 +111,30 @@ public class YamlValidatorPluginIntTest {
         String yamlDirectory2 = "src/other/resources/";
         testProjectDir.newFolder(yamlDirectory1.split("/"));
         testProjectDir.newFolder(yamlDirectory2.split("/"));
-        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" + "yamlValidator { searchPaths = ['" + yamlDirectory1 + "','" + yamlDirectory2 + "'] }", buildFile);
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
+                "yamlValidator { searchPaths = ['" + yamlDirectory1 + "','" + yamlDirectory2 + "'] }", buildFile);
 
         String expectedLineInOutput1 = "Starting to validate yaml files in " + yamlDirectory1 + ".";
         String expectedLineInOutput2 = "Starting to validate yaml files in " + yamlDirectory2 + ".";
+
+        expectBuildSuccessAndOutput(expectedLineInOutput1);
+        expectBuildSuccessAndOutput(expectedLineInOutput2);
+    }
+
+    @Test
+    public void shouldBeAbleToFindYamlsInFolderAsWellAsYamlsDefined() throws IOException {
+
+        String yamlDirectory = "src/any/resources/";
+        String yamlFileDirectory = "dir/";
+        testProjectDir.newFolder(yamlDirectory.split("/"));
+        testProjectDir.newFolder(yamlFileDirectory.split("/"));
+        File yamlFile1 = testProjectDir.newFile(yamlDirectory + "file.yaml");
+        File yamlFile2 = testProjectDir.newFile(yamlFileDirectory + "otherfile.yml");
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
+                "yamlValidator { searchPaths = ['" + yamlDirectory + "','" + yamlFile2 + "'] }", buildFile);
+
+        String expectedLineInOutput1 = yamlFile1.getAbsolutePath() + " is valid.";
+        String expectedLineInOutput2 = yamlFile2.getAbsolutePath() + " is valid.";
 
         expectBuildSuccessAndOutput(expectedLineInOutput1);
         expectBuildSuccessAndOutput(expectedLineInOutput2);
