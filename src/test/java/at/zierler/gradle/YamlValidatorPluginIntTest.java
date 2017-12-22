@@ -8,6 +8,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 import static at.zierler.gradle.YamlValidatorPlugin.TASK_NAME;
 import static org.gradle.util.GFileUtils.writeFile;
@@ -20,263 +21,306 @@ public class YamlValidatorPluginIntTest {
     @Rule
     public final TemporaryFolder testProjectDir = new TemporaryFolder();
 
+    private final String defaultYamlDirectoryRelativePath = ValidationProperties.DEFAULT_DIRECTORY;
+    private final String anyYamlDirectoryRelativePath = "src/test/resources/";
+
     private File buildFile;
-    private File yamlDirectory;
-    private File yamlFile;
+    private File defaultYamlDirectory;
+    private File anyYamlDirectory;
+
+    private File yamlFileInDefaultYamlDirectory;
+    private File yamlFileInAnyYamlDirectory;
 
     @Before
     public void setupTestProject() throws IOException {
 
         this.buildFile = testProjectDir.newFile("build.gradle");
-        String yamlDirectoryRelativePath = ValidationProperties.DEFAULT_DIRECTORY;
-        this.yamlDirectory = testProjectDir.newFolder(yamlDirectoryRelativePath.split("/"));
-        this.yamlFile = testProjectDir.newFile(yamlDirectoryRelativePath + "file.yaml");
+
+        this.defaultYamlDirectory = testProjectDir.newFolder(defaultYamlDirectoryRelativePath.split("/"));
+        this.anyYamlDirectory = testProjectDir.newFolder(anyYamlDirectoryRelativePath.split("/"));
+
+        this.yamlFileInDefaultYamlDirectory = testProjectDir.newFile(defaultYamlDirectoryRelativePath + "file.yaml");
+        this.yamlFileInAnyYamlDirectory = testProjectDir.newFile(anyYamlDirectoryRelativePath + "file.yml");
     }
 
     @Test
-    public void shouldUseDefaultSearchPathsWhenNotOverridden() throws IOException {
+    public void shouldUseDefaultSearchPathsWhenNonDefined() throws IOException {
 
-        writeDefaultBuildFileWithoutProperties();
+        writeBuildFileWithoutProperties();
 
-        String expectedLineInOutput = String.format(YamlValidatorTask.STARTING_DIRECTORY_MESSAGE, yamlDirectory.toPath().toRealPath());
-
-        expectBuildSuccessAndOutput(expectedLineInOutput);
+        expectBuildSuccessAndDirectorySearchStartMessage(defaultYamlDirectory);
     }
 
     @Test
-    public void shouldUseDefinedSearchPathWhenOverridden() throws IOException {
+    public void shouldUseDefinedSearchPaths() throws IOException {
 
-        String overriddenYamlDirectoryPath = "src/test/resources/";
-        File overridenYamlDirectory = testProjectDir.newFolder(overriddenYamlDirectoryPath.split("/"));
-        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
-                "yamlValidator { searchPaths = ['" + overriddenYamlDirectoryPath + "'] }", buildFile);
+        writeBuildFileWithAnyYamlDirectoryAsOnlyDefinedSearchPath();
 
-        String expectedLineInOutput = String.format(YamlValidatorTask.STARTING_DIRECTORY_MESSAGE, overridenYamlDirectory.toPath().toRealPath());
-
-        expectBuildSuccessAndOutput(expectedLineInOutput);
+        expectBuildSuccessAndDirectorySearchStartMessage(anyYamlDirectory);
     }
 
     @Test
-    public void shouldAllowEmptyYaml() throws IOException {
+    public void shouldSucceedForEmptyYaml() throws IOException {
 
-        writeDefaultBuildFileWithoutProperties();
+        writeBuildFileWithoutProperties();
 
-        String expectedLineInOutput = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile.toPath().toRealPath());
-
-        expectBuildSuccessAndOutput(expectedLineInOutput);
-    }
-
-
-    @Test
-    public void shouldNotAllowYamlWithDuplicateKeyWhenDuplicationIsEnabled() throws IOException {
-
-        writeDuplicateKeyYaml();
-        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
-                "yamlValidator {\n" +
-                "\tallowDuplicates = false\n" +
-                "}", buildFile);
-
-        String expectedLineInOutput = String.format(YamlValidatorTask.FILE_FAILURE_MESSAGE, yamlFile.toPath().toRealPath());
-
-        expectBuildFailureAndOutput(expectedLineInOutput);
+        expectBuildSuccessAndSuccessMessageForDefaultYamlFile();
     }
 
     @Test
-    public void shouldAllowYamlWithDuplicateKeyWhenDuplicationIsDisabled() throws IOException {
+    public void shouldNotAllowYamlWithDuplicateKeyWhenAllowDuplicatesIsFalse() throws IOException {
 
-        writeDuplicateKeyYaml();
-        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
-                "yamlValidator {\n" +
-                "\tallowDuplicates = true\n" +
-                "}", buildFile);
+        writeBuildFileWhichDoesNotAllowDuplicateKeys();
+        writeYamlFileWithDuplicateKey();
 
-        String expectedLineInOutput = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile.toPath().toRealPath());
+        expectBuildFailureAndFailureMessageForDefaultYamlFile();
+    }
 
-        expectBuildSuccessAndOutput(expectedLineInOutput);
+    @Test
+    public void shouldAllowYamlWithDuplicateKeyWhenAllowDuplicatesIsTrue() throws IOException {
+
+        writeBuildFileWhichDoesAllowDuplicateKeys();
+        writeYamlFileWithDuplicateKey();
+
+        expectBuildSuccessAndSuccessMessageForDefaultYamlFile();
     }
 
     @Test
     public void shouldAllowValidYaml() throws IOException {
 
-        writeDefaultBuildFileWithoutProperties();
-        writeFile("framework:\n  key: value\n  other: value\n\nother:\n  other: value\n  key: value", yamlFile);
+        writeBuildFileWithoutProperties();
+        writeValidYamlFile();
+
+        expectBuildSuccessAndSuccessMessageForDefaultYamlFile();
+    }
+
+    @Test
+    public void shouldSearchInMultipleFoldersWhenDefined() throws IOException {
+
+        writeBuildFileWhichDefinesTwoDirectories();
+
+        expectBuildSuccessAndStartingMessageForBothDirectories();
+    }
+
+    @Test
+    public void shouldSearchInMultipleFoldersRecursivelyWhenDefined() throws IOException {
+
+        writeBuildFileWhichDefinesTwoDirectoriesAndActivatesRecursiveSearch();
+
+        expectBuildSuccessAndRecursiveStartingMessageForBothDirectories();
+    }
+
+    @Test
+    public void shouldBeAbleToFindYamlsInFolderAsWellAsYamlsDefined() throws IOException {
+
+        writeBuildFileWhichDefinesOneYamlFileAndOneDirectoryContainingAnohterYamlFile();
+
+        expectBuildSuccessAndSuccessMessageForBothFiles();
+    }
+
+    @Test
+    public void shouldBeAbleToFindYamlsInFoldersRecursivelyWhenActivated() throws IOException {
+
+        File yamlFileInSubdirectoryOfDefaultYamlDirectory = createAndGetYamlFileInSubdirectoryOfDefaultYamlDirectory();
+        writeBuildFileWithDefaultYamlDirectoryAndRecursiveSearchActivated();
+
+        expectBuildSuccessAndSuccessMessageForDefaultFileAndFileInSubdirectory(yamlFileInSubdirectoryOfDefaultYamlDirectory);
+    }
+
+    @Test
+    public void shouldNotBeAbleToFindYamlsInFoldersRecursivelyWhenDeactivated() throws IOException {
+
+        File yamlFileInSubdirectoryOfDefaultYamlDirectory = createAndGetYamlFileInSubdirectoryOfDefaultYamlDirectory();
+        writeBuildFileWithDefaultYamlDirectoryAndRecursiveSearchDeactivated();
+
+        expectBuildSuccessAndSuccessMessageForDefaultFileAndNoMessageForFileInSubdirectory(yamlFileInSubdirectoryOfDefaultYamlDirectory);
+    }
+
+    @Test
+    public void shouldNotValidateFileWithNonYamlEnding() throws IOException {
+
+        File nonYamlFile = createAndGetNonYamlFileInDefaultYamlDirectory();
+        writeBuildFileWithNonYamlFileAsSearchPath(nonYamlFile);
+
+        expectBuildSuccessAndNoStartingMessageForNonYamlFile(nonYamlFile);
+    }
+
+    @Test
+    public void shouldNotValidateFileWithNonYamlEndingButValidateYamlFileInSameDirectory() throws IOException {
+
+        File nonYamlFile = createAndGetNonYamlFileInDefaultYamlDirectory();
+        writeBuildFileWithoutProperties();
+
+        expectBuildSuccessAndStartingFileMessageForYamlFileButNoStartingMessageForNonYamlFile(nonYamlFile);
+    }
+
+    @Test
+    public void shouldNotValidateNonYamlFileRecursivelyWhenActivated() throws IOException {
+
+        File nonYamlFileInSubdirectoryOfDefaultYamlDirectory = createAndGetNonYamlFileInSubdirectoryOfDefaultYamlDirectory();
+        writeBuildFileWithDefaultYamlDirectoryAndRecursiveSearchActivated();
+
+        expectBuildSuccessAndStartingFileMessageForYamlFileButNoStartingMessageForNonYamlFileInSubdirectory(nonYamlFileInSubdirectoryOfDefaultYamlDirectory);
+    }
+
+    private void writeBuildFileWithoutProperties() {
+
+        writeFile(
+                "plugins { id 'at.zierler.yamlvalidator' }",
+                buildFile);
+    }
+
+    private void writeBuildFileWithAnyYamlDirectoryAsOnlyDefinedSearchPath() {
+
+        writeFile(
+                "plugins { id 'at.zierler.yamlvalidator' }\n" +
+                        "yamlValidator { searchPaths = ['" + anyYamlDirectoryRelativePath + "'] }",
+                buildFile);
+    }
+
+
+    private void writeBuildFileWhichDoesNotAllowDuplicateKeys() {
+
+        writeFile(
+                "plugins { id 'at.zierler.yamlvalidator' }\n" +
+                        "yamlValidator { allowDuplicates = false }",
+                buildFile);
+    }
+
+    private void writeBuildFileWhichDoesAllowDuplicateKeys() {
+
+        writeFile(
+                "plugins { id 'at.zierler.yamlvalidator' }\n" +
+                        "yamlValidator { allowDuplicates = true }",
+                buildFile);
+    }
+
+
+    private void writeBuildFileWhichDefinesTwoDirectories() {
+
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
+                        "yamlValidator { searchPaths = ['" + defaultYamlDirectoryRelativePath + "','" + anyYamlDirectoryRelativePath + "'] }",
+                buildFile);
+    }
+
+    private void writeBuildFileWhichDefinesTwoDirectoriesAndActivatesRecursiveSearch() {
+
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
+                        "yamlValidator {\n" +
+                        "searchPaths = ['" + defaultYamlDirectoryRelativePath + "','" + anyYamlDirectoryRelativePath + "']\n" +
+                        "searchRecursive = true\n" +
+                        "}",
+                buildFile);
+    }
+
+    private void writeBuildFileWhichDefinesOneYamlFileAndOneDirectoryContainingAnohterYamlFile() {
+
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
+                        "yamlValidator { searchPaths = ['" + defaultYamlDirectory + "','" + yamlFileInAnyYamlDirectory + "'] }",
+                buildFile);
+    }
+
+    private void writeBuildFileWithDefaultYamlDirectoryAndRecursiveSearchActivated() {
+
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
+                        "yamlValidator {\n" +
+                        "\tsearchPaths = ['" + defaultYamlDirectoryRelativePath + "']\n" +
+                        "\tsearchRecursive = true\n" +
+                        "}",
+                buildFile);
+    }
+
+    private void writeBuildFileWithDefaultYamlDirectoryAndRecursiveSearchDeactivated() {
+
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
+                        "yamlValidator {\n" +
+                        "\tsearchPaths = ['" + defaultYamlDirectoryRelativePath + "']\n" +
+                        "\tsearchRecursive = false\n" +
+                        "}",
+                buildFile);
+    }
+
+    private void writeBuildFileWithNonYamlFileAsSearchPath(File anyTxtFile) {
+        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
+                        "yamlValidator { searchPaths = ['" + anyTxtFile + "'] }",
+                buildFile);
+    }
+
+    private void writeYamlFileWithDuplicateKey() {
+
+        writeFile(
+                "framework:\n" +
+                        "  key: value\n" +
+                        "\n" +
+                        "framework:\n" +
+                        "  other: value",
+                yamlFileInDefaultYamlDirectory);
+    }
+
+
+    private void writeValidYamlFile() {
+
+        writeFile(
+                "framework:\n" +
+                        "  key: value\n" +
+                        "  other: value\n" +
+                        "\n" +
+                        "other:\n" +
+                        "  other: value\n" +
+                        "  key: value",
+                yamlFileInDefaultYamlDirectory);
+    }
+
+    private File createAndGetYamlFileInSubdirectoryOfDefaultYamlDirectory() throws IOException {
+
+        String subdirectoryInDefaultYamlDirectoryRelativePath = defaultYamlDirectoryRelativePath + "subdir/";
+        testProjectDir.newFolder(subdirectoryInDefaultYamlDirectoryRelativePath.split("/"));
+        return testProjectDir.newFile(subdirectoryInDefaultYamlDirectoryRelativePath + "file.yaml");
+    }
+
+    private File createAndGetNonYamlFileInDefaultYamlDirectory() throws IOException {
+
+        String anyTxtFilePath = defaultYamlDirectoryRelativePath + "file.txt";
+        return testProjectDir.newFile(anyTxtFilePath);
+    }
+
+    private File createAndGetNonYamlFileInSubdirectoryOfDefaultYamlDirectory() throws IOException {
+
+        String subdirectoryInDefaultYamlDirectoryRelativePath = defaultYamlDirectoryRelativePath + "subdir/";
+        testProjectDir.newFolder(subdirectoryInDefaultYamlDirectoryRelativePath.split("/"));
+        return testProjectDir.newFile(subdirectoryInDefaultYamlDirectoryRelativePath + "file.txt");
+    }
+
+    private void expectBuildSuccessAndDirectorySearchStartMessage(File directory) throws IOException {
+
+        String expectedLineInOutput = String.format(YamlValidatorTask.STARTING_DIRECTORY_MESSAGE, directory.toPath().toRealPath());
+
+        expectBuildSuccessAndOutput(expectedLineInOutput);
+    }
+
+
+    private void expectBuildSuccessAndSuccessMessageForDefaultYamlFile() throws IOException {
+
+        expectBuildSuccessAndSuccessMessageForFile(yamlFileInDefaultYamlDirectory);
+    }
+
+    private void expectBuildSuccessAndSuccessMessageForFile(File yamlFile) throws IOException {
 
         String expectedLineInOutput = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile.toPath().toRealPath());
 
         expectBuildSuccessAndOutput(expectedLineInOutput);
     }
 
-    @Test
-    public void shouldSearchInMultipleFoldersWhenDefined() throws IOException {
+    private void expectBuildFailureAndFailureMessageForDefaultYamlFile() throws IOException {
 
-        String yamlDirectory1Path = "src/any/resources/";
-        String yamlDirectory2Path = "src/other/resources/";
-        File yamlDirectory1 = testProjectDir.newFolder(yamlDirectory1Path.split("/"));
-        File yamlDirectory2 = testProjectDir.newFolder(yamlDirectory2Path.split("/"));
-        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
-                "yamlValidator { searchPaths = ['" + yamlDirectory1Path + "','" + yamlDirectory2Path + "'] }", buildFile);
-
-        String expectedLineInOutput1 = String.format(YamlValidatorTask.STARTING_DIRECTORY_MESSAGE, yamlDirectory1.toPath().toRealPath());
-        String expectedLineInOutput2 = String.format(YamlValidatorTask.STARTING_DIRECTORY_MESSAGE, yamlDirectory2.toPath().toRealPath());
-
-        String output = runBuildAndGetOutput();
-
-        assertThat(output, containsString(expectedLineInOutput1));
-        assertThat(output, containsString(expectedLineInOutput2));
+        expectBuildFailureAndFailureMessageForFile(yamlFileInDefaultYamlDirectory);
     }
 
-    @Test
-    public void shouldSearchInMultipleFoldersRecursivelyWhenDefined() throws IOException {
+    private void expectBuildFailureAndFailureMessageForFile(File yamlFile) throws IOException {
 
-        String yamlDirectory1Path = "src/any/resources/";
-        String yamlDirectory2Path = "src/other/resources/";
-        File yamlDirectory1 = testProjectDir.newFolder(yamlDirectory1Path.split("/"));
-        File yamlDirectory2 = testProjectDir.newFolder(yamlDirectory2Path.split("/"));
-        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
-                "yamlValidator {\n" +
-                "searchPaths = ['" + yamlDirectory1Path + "','" + yamlDirectory2Path + "']\n" +
-                "searchRecursive = true\n" +
-                "}", buildFile);
+        String expectedLineInOutput = String.format(YamlValidatorTask.FILE_FAILURE_MESSAGE, yamlFile.toPath().toRealPath());
 
-        String expectedLineInOutput1 = String.format(YamlValidatorTask.STARTING_DIRECTORY_RECURSIVE_MESSAGE, yamlDirectory1.toPath().toRealPath());
-        String expectedLineInOutput2 = String.format(YamlValidatorTask.STARTING_DIRECTORY_RECURSIVE_MESSAGE, yamlDirectory2.toPath().toRealPath());
-
-        String output = runBuildAndGetOutput();
-
-        assertThat(output, containsString(expectedLineInOutput1));
-        assertThat(output, containsString(expectedLineInOutput2));
-    }
-
-    @Test
-    public void shouldBeAbleToFindYamlsInFolderAsWellAsYamlsDefined() throws IOException {
-
-        String yamlDirectory = "src/any/resources/";
-        String yamlFileDirectory = "dir/";
-        testProjectDir.newFolder(yamlDirectory.split("/"));
-        testProjectDir.newFolder(yamlFileDirectory.split("/"));
-        File yamlFile1 = testProjectDir.newFile(yamlDirectory + "file.yaml");
-        File yamlFile2 = testProjectDir.newFile(yamlFileDirectory + "otherfile.yml");
-        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
-                "yamlValidator { searchPaths = ['" + yamlDirectory + "','" + yamlFile2 + "'] }", buildFile);
-
-        String expectedLineInOutput1 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile1.toPath().toRealPath());
-        String expectedLineInOutput2 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile2.toPath().toRealPath());
-
-        String output = runBuildAndGetOutput();
-
-        assertThat(output, containsString(expectedLineInOutput1));
-        assertThat(output, containsString(expectedLineInOutput2));
-    }
-
-    @Test
-    public void shouldBeAbleToFindYamlsInFoldersRecursivelyWhenActivated() throws IOException {
-
-        String firstLevelDir = "first/";
-        String secondLevelDir = "first/second/";
-        testProjectDir.newFolder(firstLevelDir.split("/"));
-        testProjectDir.newFolder(secondLevelDir.split("/"));
-        File yamlFile1 = testProjectDir.newFile(firstLevelDir + "file.yaml");
-        File yamlFile2 = testProjectDir.newFile(secondLevelDir + "otherfile.yml");
-        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
-                "yamlValidator {\n" +
-                "\tsearchPaths = ['" + firstLevelDir + "']\n" +
-                "\tsearchRecursive = true\n" +
-                "}", buildFile);
-
-        String expectedLineInOutput1 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile1.toPath().toRealPath());
-        String expectedLineInOutput2 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile2.toPath().toRealPath());
-
-        String output = runBuildAndGetOutput();
-
-        assertThat(output, containsString(expectedLineInOutput1));
-        assertThat(output, containsString(expectedLineInOutput2));
-    }
-
-    @Test
-    public void shouldNotBeAbleToFindYamlsInFoldersRecursivelyWhenActivated() throws IOException {
-
-        String firstLevelDir = "first/";
-        String secondLevelDir = "first/second/";
-        testProjectDir.newFolder(firstLevelDir.split("/"));
-        testProjectDir.newFolder(secondLevelDir.split("/"));
-        File yamlFile1 = testProjectDir.newFile(firstLevelDir + "file.yaml");
-        File yamlFile2 = testProjectDir.newFile(secondLevelDir + "otherfile.yml");
-        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
-                "yamlValidator {\n" +
-                "\tsearchPaths = ['" + firstLevelDir + "']\n" +
-                "\tsearchRecursive = false\n" +
-                "}", buildFile);
-
-        String expectedLineInOutput = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile1.toPath().toRealPath());
-        String unexpectedLineInOutput = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFile2.toPath().toRealPath());
-
-        expectBuildSuccessAndOutputButNotOtherOutput(expectedLineInOutput, unexpectedLineInOutput);
-    }
-
-    @Test
-    public void shouldNotValidateFileWithNonYamlEnding() throws IOException {
-
-        String directory = "src/test/resources/";
-        testProjectDir.newFolder(directory.split("/"));
-        String anyTxtFilePath = directory + "file.txt";
-        File anyTxtFile = testProjectDir.newFile(anyTxtFilePath);
-        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
-                "yamlValidator { searchPaths = ['" + anyTxtFile + "'] }", buildFile);
-
-        String unexpectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, anyTxtFile.toPath().toRealPath());
-
-        String output = runBuildAndGetOutput();
-
-        assertThat(output, not(containsString(unexpectedLineInOutput)));
-    }
-
-    @Test
-    public void shouldNotValidateFileWithNonYamlEndingButValidateYamlFileInSameDirectory() throws IOException {
-
-        String directory = "src/test/resources/";
-        testProjectDir.newFolder(directory.split("/"));
-        String anyTxtFilePath = directory + "file.jpg";
-        File anyTxtFile = testProjectDir.newFile(anyTxtFilePath);
-        String anyYamlFilePath = directory + "application.yml";
-        File anyYamlFile = testProjectDir.newFile(anyYamlFilePath);
-        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
-                "yamlValidator { searchPaths = ['" + directory + "'] }", buildFile);
-
-        String expectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, anyYamlFile.toPath().toRealPath());
-        String unexpectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, anyTxtFile.toPath().toRealPath());
-
-        expectBuildSuccessAndOutputButNotOtherOutput(expectedLineInOutput, unexpectedLineInOutput);
-    }
-
-    @Test
-    public void shouldNotValidateNonYamlFileRecursivelyWhenActivated() throws IOException {
-
-        String firstLevelDir = "first/";
-        String secondLevelDir = "first/second/";
-        testProjectDir.newFolder(firstLevelDir.split("/"));
-        testProjectDir.newFolder(secondLevelDir.split("/"));
-        File yamlFile = testProjectDir.newFile(firstLevelDir + "file.yaml");
-        File nonYamlFile = testProjectDir.newFile(secondLevelDir + "otherfile.gradle");
-        writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
-                "yamlValidator {\n" +
-                "\tsearchPaths = ['" + firstLevelDir + "']\n" +
-                "\tsearchRecursive = true\n" +
-                "}", buildFile);
-
-        String expectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, yamlFile.toPath().toRealPath());
-        String unexpectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, nonYamlFile.toPath().toRealPath());
-
-        expectBuildSuccessAndOutputButNotOtherOutput(expectedLineInOutput, unexpectedLineInOutput);
-    }
-
-    private void writeDefaultBuildFileWithoutProperties() {
-
-        writeFile("plugins { id 'at.zierler.yamlvalidator' }", buildFile);
-    }
-
-    private void writeDuplicateKeyYaml() {
-
-        writeFile("framework:\n  key: value\n\nframework:\n  other: value", yamlFile);
+        expectBuildFailureAndOutput(expectedLineInOutput);
     }
 
     private void expectBuildSuccessAndOutput(String expectedLineInOutput) {
@@ -293,6 +337,77 @@ public class YamlValidatorPluginIntTest {
         assertThat(output, containsString(expectedLineInOutput));
     }
 
+    private void expectBuildSuccessAndStartingMessageForBothDirectories() throws IOException {
+
+        String expectedLineInOutput1 = String.format(YamlValidatorTask.STARTING_DIRECTORY_MESSAGE, defaultYamlDirectory.toPath().toRealPath());
+        String expectedLineInOutput2 = String.format(YamlValidatorTask.STARTING_DIRECTORY_MESSAGE, anyYamlDirectory.toPath().toRealPath());
+
+        expectBuildSuccessAndAllOfFollowingLinesInOutput(expectedLineInOutput1, expectedLineInOutput2);
+    }
+
+    private void expectBuildSuccessAndRecursiveStartingMessageForBothDirectories() throws IOException {
+
+        String expectedLineInOutput1 = String.format(YamlValidatorTask.STARTING_DIRECTORY_RECURSIVE_MESSAGE, defaultYamlDirectory.toPath().toRealPath());
+        String expectedLineInOutput2 = String.format(YamlValidatorTask.STARTING_DIRECTORY_RECURSIVE_MESSAGE, anyYamlDirectory.toPath().toRealPath());
+
+        expectBuildSuccessAndAllOfFollowingLinesInOutput(expectedLineInOutput1, expectedLineInOutput2);
+    }
+
+    private void expectBuildSuccessAndSuccessMessageForBothFiles() throws IOException {
+
+        String expectedLineInOutput1 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
+        String expectedLineInOutput2 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFileInAnyYamlDirectory.toPath().toRealPath());
+
+        expectBuildSuccessAndAllOfFollowingLinesInOutput(expectedLineInOutput1, expectedLineInOutput2);
+    }
+
+    private void expectBuildSuccessAndSuccessMessageForDefaultFileAndFileInSubdirectory(File yamlFileInSubdirectoryInDefaultYamlDirectory) throws IOException {
+
+        String expectedLineInOutput1 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
+        String expectedLineInOutput2 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFileInSubdirectoryInDefaultYamlDirectory.toPath().toRealPath());
+
+        expectBuildSuccessAndAllOfFollowingLinesInOutput(expectedLineInOutput1, expectedLineInOutput2);
+    }
+
+    private void expectBuildSuccessAndSuccessMessageForDefaultFileAndNoMessageForFileInSubdirectory(File yamlFileInSubdirectoryOfDefaultYamlDirectory) throws IOException {
+
+        String expectedLineInOutput = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
+        String unexpectedLineInOutput = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFileInSubdirectoryOfDefaultYamlDirectory.toPath().toRealPath());
+
+        expectBuildSuccessAndOutputButNotOtherOutput(expectedLineInOutput, unexpectedLineInOutput);
+    }
+
+    private void expectBuildSuccessAndNoStartingMessageForNonYamlFile(File nonYamlFile) throws IOException {
+
+        String unexpectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, nonYamlFile.toPath().toRealPath());
+
+        String output = runBuildAndGetOutput();
+
+        assertThat(output, not(containsString(unexpectedLineInOutput)));
+    }
+
+    private void expectBuildSuccessAndStartingFileMessageForYamlFileButNoStartingMessageForNonYamlFile(File nonYamlFile) throws IOException {
+
+        String expectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
+        String unexpectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, nonYamlFile.toPath().toRealPath());
+
+        expectBuildSuccessAndOutputButNotOtherOutput(expectedLineInOutput, unexpectedLineInOutput);
+    }
+
+    private void expectBuildSuccessAndStartingFileMessageForYamlFileButNoStartingMessageForNonYamlFileInSubdirectory(File nonYamlFileInSubdirectoryOfDefaultYamlDirectory) throws IOException {
+
+        String expectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
+        String unexpectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, nonYamlFileInSubdirectoryOfDefaultYamlDirectory.toPath().toRealPath());
+
+        expectBuildSuccessAndOutputButNotOtherOutput(expectedLineInOutput, unexpectedLineInOutput);
+    }
+
+    private void expectBuildSuccessAndAllOfFollowingLinesInOutput(String... expectedLinesInOutput) {
+
+        String output = runBuildAndGetOutput();
+
+        Arrays.stream(expectedLinesInOutput).forEach(expectedLineInOutput -> assertThat(output, containsString(expectedLineInOutput)));
+    }
 
     private void expectBuildSuccessAndOutputButNotOtherOutput(String expectedLineInOutput, String unexpectedLineInOutput) {
 
