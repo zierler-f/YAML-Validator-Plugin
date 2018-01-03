@@ -18,13 +18,14 @@ import static org.hamcrest.core.IsNot.not;
 
 public class YamlValidatorPluginIntTest {
 
+    private static final String DEFAULT_YAML_DIRECTORY_RELATIVE_PATH = ValidationProperties.DEFAULT_DIRECTORY;
+    private static final String ANY_YAML_DIRECTORY_RELATIVE_PATH = "src/test/resources/";
+
     @Rule
     public final TemporaryFolder testProjectDir = new TemporaryFolder();
 
-    private final String defaultYamlDirectoryRelativePath = ValidationProperties.DEFAULT_DIRECTORY;
-    private final String anyYamlDirectoryRelativePath = "src/test/resources/";
-
     private File buildFile;
+
     private File defaultYamlDirectory;
     private File anyYamlDirectory;
 
@@ -36,11 +37,11 @@ public class YamlValidatorPluginIntTest {
 
         this.buildFile = testProjectDir.newFile("build.gradle");
 
-        this.defaultYamlDirectory = testProjectDir.newFolder(defaultYamlDirectoryRelativePath.split("/"));
-        this.anyYamlDirectory = testProjectDir.newFolder(anyYamlDirectoryRelativePath.split("/"));
+        this.defaultYamlDirectory = testProjectDir.newFolder(DEFAULT_YAML_DIRECTORY_RELATIVE_PATH.split("/"));
+        this.anyYamlDirectory = testProjectDir.newFolder(ANY_YAML_DIRECTORY_RELATIVE_PATH.split("/"));
 
-        this.yamlFileInDefaultYamlDirectory = testProjectDir.newFile(defaultYamlDirectoryRelativePath + "file.yaml");
-        this.yamlFileInAnyYamlDirectory = testProjectDir.newFile(anyYamlDirectoryRelativePath + "file.yml");
+        this.yamlFileInDefaultYamlDirectory = testProjectDir.newFile(DEFAULT_YAML_DIRECTORY_RELATIVE_PATH + "file.yaml");
+        this.yamlFileInAnyYamlDirectory = testProjectDir.newFile(ANY_YAML_DIRECTORY_RELATIVE_PATH + "file.yml");
     }
 
     @Test
@@ -174,7 +175,7 @@ public class YamlValidatorPluginIntTest {
 
         writeFile(
                 "plugins { id 'at.zierler.yamlvalidator' }\n" +
-                        "yamlValidator { searchPaths = ['" + anyYamlDirectoryRelativePath + "'] }",
+                        "yamlValidator { searchPaths = ['" + ANY_YAML_DIRECTORY_RELATIVE_PATH + "'] }",
                 buildFile);
     }
 
@@ -199,7 +200,7 @@ public class YamlValidatorPluginIntTest {
     private void writeBuildFileWhichDefinesTwoDirectories() {
 
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
-                        "yamlValidator { searchPaths = ['" + defaultYamlDirectoryRelativePath + "','" + anyYamlDirectoryRelativePath + "'] }",
+                        "yamlValidator { searchPaths = ['" + DEFAULT_YAML_DIRECTORY_RELATIVE_PATH + "','" + ANY_YAML_DIRECTORY_RELATIVE_PATH + "'] }",
                 buildFile);
     }
 
@@ -207,7 +208,7 @@ public class YamlValidatorPluginIntTest {
 
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
                         "yamlValidator {\n" +
-                        "searchPaths = ['" + defaultYamlDirectoryRelativePath + "','" + anyYamlDirectoryRelativePath + "']\n" +
+                        "searchPaths = ['" + DEFAULT_YAML_DIRECTORY_RELATIVE_PATH + "','" + ANY_YAML_DIRECTORY_RELATIVE_PATH + "']\n" +
                         "searchRecursive = true\n" +
                         "}",
                 buildFile);
@@ -224,7 +225,7 @@ public class YamlValidatorPluginIntTest {
 
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
                         "yamlValidator {\n" +
-                        "\tsearchPaths = ['" + defaultYamlDirectoryRelativePath + "']\n" +
+                        "\tsearchPaths = ['" + DEFAULT_YAML_DIRECTORY_RELATIVE_PATH + "']\n" +
                         "\tsearchRecursive = true\n" +
                         "}",
                 buildFile);
@@ -234,7 +235,7 @@ public class YamlValidatorPluginIntTest {
 
         writeFile("plugins { id 'at.zierler.yamlvalidator' }\n" +
                         "yamlValidator {\n" +
-                        "\tsearchPaths = ['" + defaultYamlDirectoryRelativePath + "']\n" +
+                        "\tsearchPaths = ['" + DEFAULT_YAML_DIRECTORY_RELATIVE_PATH + "']\n" +
                         "\tsearchRecursive = false\n" +
                         "}",
                 buildFile);
@@ -273,20 +274,20 @@ public class YamlValidatorPluginIntTest {
 
     private File createAndGetYamlFileInSubdirectoryOfDefaultYamlDirectory() throws IOException {
 
-        String subdirectoryInDefaultYamlDirectoryRelativePath = defaultYamlDirectoryRelativePath + "subdir/";
+        String subdirectoryInDefaultYamlDirectoryRelativePath = DEFAULT_YAML_DIRECTORY_RELATIVE_PATH + "subdir/";
         testProjectDir.newFolder(subdirectoryInDefaultYamlDirectoryRelativePath.split("/"));
         return testProjectDir.newFile(subdirectoryInDefaultYamlDirectoryRelativePath + "file.yaml");
     }
 
     private File createAndGetNonYamlFileInDefaultYamlDirectory() throws IOException {
 
-        String anyTxtFilePath = defaultYamlDirectoryRelativePath + "file.txt";
+        String anyTxtFilePath = DEFAULT_YAML_DIRECTORY_RELATIVE_PATH + "file.txt";
         return testProjectDir.newFile(anyTxtFilePath);
     }
 
     private File createAndGetNonYamlFileInSubdirectoryOfDefaultYamlDirectory() throws IOException {
 
-        String subdirectoryInDefaultYamlDirectoryRelativePath = defaultYamlDirectoryRelativePath + "subdir/";
+        String subdirectoryInDefaultYamlDirectoryRelativePath = DEFAULT_YAML_DIRECTORY_RELATIVE_PATH + "subdir/";
         testProjectDir.newFolder(subdirectoryInDefaultYamlDirectoryRelativePath.split("/"));
         return testProjectDir.newFile(subdirectoryInDefaultYamlDirectoryRelativePath + "file.txt");
     }
