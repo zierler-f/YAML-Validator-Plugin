@@ -82,7 +82,14 @@ public class YamlValidatorTask extends DefaultTask {
 
     private boolean isYamlFile(Path file) {
 
-        String fileName = file.getFileName().toString();
+        Path fileNameAsPath = file.getFileName();
+
+        if (fileNameAsPath == null) {
+            throw new IllegalStateException(String.format("Couldn't extract file name from %s.", file));
+        }
+
+        String fileName = fileNameAsPath.toString();
+
         return fileName.endsWith(".yaml") || fileName.endsWith(".yml");
     }
 
