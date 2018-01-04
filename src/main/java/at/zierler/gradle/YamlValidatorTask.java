@@ -1,13 +1,13 @@
 package at.zierler.gradle;
 
-import com.esotericsoftware.yamlbeans.YamlConfig;
-import com.esotericsoftware.yamlbeans.YamlReader;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskAction;
+import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
-import java.io.Reader;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -20,8 +20,10 @@ public class YamlValidatorTask extends DefaultTask {
     static final String FILE_FAILURE_MESSAGE = "Validation of YAML file '%s' failed.";
 
     private final ValidationProperties validationProperties;
+    private Yaml yaml;
 
     public YamlValidatorTask() {
+
         this.validationProperties = getProject().getExtensions().findByType(ValidationProperties.class);
     }
 
@@ -97,31 +99,28 @@ public class YamlValidatorTask extends DefaultTask {
 
         System.out.println(String.format(STARTING_FILE_MESSAGE, file));
 
-        try (Reader yamlFileReader = Files.newBufferedReader(file)) {
-            YamlReader yamlReader = setUpYamlReader(yamlFileReader);
-
-            yamlReader.read();
-        } catch (IOException e) {
+        try (InputStream yamlFileInputStream = Files.newInputStream(file)) {
+            yamlLoader().load(yamlFileInputStream);
+        } catch (Exception e) {
             throw new GradleException(String.format(FILE_FAILURE_MESSAGE, file), e);
         }
 
         System.out.println(String.format(FILE_SUCCESS_MESSAGE, file));
     }
 
-    private YamlReader setUpYamlReader(Reader yamlFileReader) {
+    private Yaml yamlLoader() {
 
-        YamlConfig yamlConfig = setUpYamlConfig();
-        return new YamlReader(yamlFileReader, yamlConfig);
+        if (yaml == null) {
+            createYamlLoader();
+        }
+        return yaml;
     }
 
-    private YamlConfig setUpYamlConfig() {
+    private void createYamlLoader() {
 
-        YamlConfig yamlConfig = new YamlConfig();
-
-        boolean allowDuplicates = validationProperties.isAllowDuplicates();
-        yamlConfig.setAllowDuplicates(allowDuplicates);
-
-        return yamlConfig;
+        LoaderOptions loaderOptions = new LoaderOptions();
+        loaderOptions.setAllowDuplicateKeys(validationProperties.isAllowDuplicates());
+        yaml = new Yaml(loaderOptions);
     }
 
 }
