@@ -164,6 +164,27 @@ public class YamlValidatorPluginIntTest {
         expectBuildSuccessAndStartingFileMessageForYamlFileButNoStartingMessageForNonYamlFileInSubdirectory(nonYamlFileInSubdirectoryOfDefaultYamlDirectory);
     }
 
+    @Test
+    public void shouldRunYamlValidationDuringCheckPhase() throws IOException {
+
+        writeFile(
+                "plugins { id 'at.zierler.yamlvalidator' }\n" +
+                        "apply plugin: 'java'",
+                buildFile);
+
+        String expectedLineInOutput = String.format(YamlValidatorTask.STARTING_DIRECTORY_MESSAGE, defaultYamlDirectory.toPath().toRealPath());
+
+        String output = GradleRunner
+                .create()
+                .withProjectDir(testProjectDir.getRoot())
+                .withPluginClasspath()
+                .withArguments("check")
+                .build()
+                .getOutput();
+
+        assertThat(output, containsString(expectedLineInOutput));
+    }
+
     private void writeBuildFileWithoutProperties() {
 
         writeFile(
@@ -326,14 +347,14 @@ public class YamlValidatorPluginIntTest {
 
     private void expectBuildSuccessAndOutput(String expectedLineInOutput) {
 
-        String output = runBuildAndGetOutput();
+        String output = runYamlValidateTaskAndGetOutput();
 
         assertThat(output, containsString(expectedLineInOutput));
     }
 
     private void expectBuildFailureAndOutput(String expectedLineInOutput) {
 
-        String output = runBuildExpectedToFailAndGetOutput();
+        String output = runYamlValidateTaskExpectedToFailAndGetOutput();
 
         assertThat(output, containsString(expectedLineInOutput));
     }
@@ -382,7 +403,7 @@ public class YamlValidatorPluginIntTest {
 
         String unexpectedLineInOutput = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, nonYamlFile.toPath().toRealPath());
 
-        String output = runBuildAndGetOutput();
+        String output = runYamlValidateTaskAndGetOutput();
 
         assertThat(output, not(containsString(unexpectedLineInOutput)));
     }
@@ -405,31 +426,31 @@ public class YamlValidatorPluginIntTest {
 
     private void expectBuildSuccessAndAllOfFollowingLinesInOutput(String... expectedLinesInOutput) {
 
-        String output = runBuildAndGetOutput();
+        String output = runYamlValidateTaskAndGetOutput();
 
         Arrays.stream(expectedLinesInOutput).forEach(expectedLineInOutput -> assertThat(output, containsString(expectedLineInOutput)));
     }
 
     private void expectBuildSuccessAndOutputButNotOtherOutput(String expectedLineInOutput, String unexpectedLineInOutput) {
 
-        String output = runBuildAndGetOutput();
+        String output = runYamlValidateTaskAndGetOutput();
 
         assertThat(output, containsString(expectedLineInOutput));
         assertThat(output, not(containsString(unexpectedLineInOutput)));
     }
 
-    private String runBuildAndGetOutput() {
+    private String runYamlValidateTaskAndGetOutput() {
 
-        return createGradleRunner().build().getOutput();
+        return createGradleRunnerForYamlValidateTask().build().getOutput();
     }
 
 
-    private String runBuildExpectedToFailAndGetOutput() {
+    private String runYamlValidateTaskExpectedToFailAndGetOutput() {
 
-        return createGradleRunner().buildAndFail().getOutput();
+        return createGradleRunnerForYamlValidateTask().buildAndFail().getOutput();
     }
 
-    private GradleRunner createGradleRunner() {
+    private GradleRunner createGradleRunnerForYamlValidateTask() {
 
         return GradleRunner
                 .create()

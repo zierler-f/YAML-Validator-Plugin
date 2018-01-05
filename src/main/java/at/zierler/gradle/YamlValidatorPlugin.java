@@ -2,6 +2,7 @@ package at.zierler.gradle;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.tasks.TaskContainer;
 
 public class YamlValidatorPlugin implements Plugin<Project> {
 
@@ -11,7 +12,16 @@ public class YamlValidatorPlugin implements Plugin<Project> {
     public void apply(Project project) {
 
         project.getExtensions().create("yamlValidator", ValidationProperties.class);
-        project.getTasks().create(TASK_NAME, YamlValidatorTask.class);
+
+        TaskContainer tasks = project.getTasks();
+
+        final YamlValidatorTask yamlValidatorTask = tasks.create(TASK_NAME, YamlValidatorTask.class);
+
+        tasks.whenTaskAdded(task -> {
+            if ("check".equals(task.getName())) {
+                task.dependsOn(yamlValidatorTask);
+            }
+        });
     }
 
 }
