@@ -10,7 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
-import static at.zierler.gradle.YamlValidatorPlugin.TASK_NAME;
+import static at.zierler.gradle.YamlValidatorPlugin.VALIDATE_YAML_TASK_NAME;
 import static org.gradle.util.GFileUtils.writeFile;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -456,7 +456,7 @@ public class YamlValidatorPluginIntTest {
                 .create()
                 .withProjectDir(testProjectDir.getRoot())
                 .withPluginClasspath()
-                .withArguments(TASK_NAME);
+                .withArguments(VALIDATE_YAML_TASK_NAME);
     }
 
 }

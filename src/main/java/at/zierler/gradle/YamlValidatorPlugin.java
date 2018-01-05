@@ -2,11 +2,14 @@ package at.zierler.gradle;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.tasks.TaskContainer;
 
 public class YamlValidatorPlugin implements Plugin<Project> {
 
-    static final String TASK_NAME = "validateYaml";
+    static final String VALIDATE_YAML_TASK_NAME = "validateYaml";
+
+    private YamlValidatorTask yamlValidatorTask;
 
     @Override
     public void apply(Project project) {
@@ -15,13 +18,16 @@ public class YamlValidatorPlugin implements Plugin<Project> {
 
         TaskContainer tasks = project.getTasks();
 
-        final YamlValidatorTask yamlValidatorTask = tasks.create(TASK_NAME, YamlValidatorTask.class);
+        yamlValidatorTask = tasks.create(VALIDATE_YAML_TASK_NAME, YamlValidatorTask.class);
 
-        tasks.whenTaskAdded(task -> {
-            if ("check".equals(task.getName())) {
-                task.dependsOn(yamlValidatorTask);
-            }
-        });
+        tasks.whenTaskAdded(this::makeTaskDependOnYamlValidatorTaskIfTaskNameIsCheck);
+    }
+
+    private void makeTaskDependOnYamlValidatorTaskIfTaskNameIsCheck(Task task) {
+
+        if ("check".equals(task.getName()) && yamlValidatorTask != null) {
+            task.dependsOn(yamlValidatorTask);
+        }
     }
 
 }
