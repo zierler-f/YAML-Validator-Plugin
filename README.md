@@ -81,3 +81,7 @@ yamlValidator {
     searchRecursive = false
 }
 ```
+
+### Logging
+
+All messages are logged in logging level INFO and higher by default. To see all outputs please use: `gradle validateYaml --info`.
