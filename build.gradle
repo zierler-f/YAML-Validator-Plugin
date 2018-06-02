@@ -26,7 +26,7 @@ dependencies {
     compile gradleApi()
     compile group: 'org.yaml', name: 'snakeyaml', version: '1.19'
 
-    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.16.18'
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.16.22'
 
     runtime group: 'org.yaml', name: 'snakeyaml', version: '1.19'
 
