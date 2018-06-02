@@ -178,11 +178,35 @@ public class YamlValidatorPluginIntTest {
                 .create()
                 .withProjectDir(testProjectDir.getRoot())
                 .withPluginClasspath()
-                .withArguments("check")
+                .withArguments("check", "--info")
                 .build()
                 .getOutput();
 
         assertThat(output, containsString(expectedLineInOutput));
+    }
+
+    @Test
+    public void shouldNotLogWhenLogLevelIsLifecycle() throws IOException {
+
+        writeFile(
+                "plugins { id 'at.zierler.yamlvalidator' }\n" +
+                        "apply plugin: 'java'",
+                buildFile);
+
+        String startingFileMessage = String.format(YamlValidatorTask.STARTING_FILE_MESSAGE, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
+        String startingDirectoryMessage = String.format(YamlValidatorTask.STARTING_DIRECTORY_MESSAGE, defaultYamlDirectory.toPath().toRealPath());
+        String fileSuccessMessage = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
+
+        String output = GradleRunner
+                .create()
+                .withProjectDir(testProjectDir.getRoot())
+                .withPluginClasspath()
+                .build()
+                .getOutput();
+
+        assertThat(output, not(containsString(startingDirectoryMessage)));
+        assertThat(output, not(containsString(startingFileMessage)));
+        assertThat(output, not(containsString(fileSuccessMessage)));
     }
 
     private void writeBuildFileWithoutProperties() {
@@ -456,7 +480,7 @@ public class YamlValidatorPluginIntTest {
                 .create()
                 .withProjectDir(testProjectDir.getRoot())
                 .withPluginClasspath()
-                .withArguments(VALIDATE_YAML_TASK_NAME);
+                .withArguments(VALIDATE_YAML_TASK_NAME, "--info");
     }
 
 }

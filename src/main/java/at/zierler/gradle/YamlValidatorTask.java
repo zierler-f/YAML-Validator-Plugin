@@ -72,13 +72,13 @@ public class YamlValidatorTask extends DefaultTask {
 
     private void validateYamlFilesOnlyDirectlyInDirectory(Path directory) throws IOException {
 
-        System.out.println(String.format(STARTING_DIRECTORY_MESSAGE, directory));
+        getLogger().info(String.format(STARTING_DIRECTORY_MESSAGE, directory));
         Files.list(directory).filter(this::isYamlFile).forEach(this::validateYamlFile);
     }
 
     private void validateYamlFilesInDirectoryRecursively(Path directory) throws IOException {
 
-        System.out.println(String.format(STARTING_DIRECTORY_RECURSIVE_MESSAGE, directory));
+        getLogger().info(String.format(STARTING_DIRECTORY_RECURSIVE_MESSAGE, directory));
         Files.walk(directory).filter(this::isYamlFile).forEach(this::validateYamlFile);
     }
 
@@ -97,7 +97,7 @@ public class YamlValidatorTask extends DefaultTask {
 
     private void validateYamlFile(Path file) {
 
-        System.out.println(String.format(STARTING_FILE_MESSAGE, file));
+        getLogger().info(String.format(STARTING_FILE_MESSAGE, file));
 
         try (InputStream yamlFileInputStream = Files.newInputStream(file)) {
             yamlLoader().load(yamlFileInputStream);
@@ -105,7 +105,7 @@ public class YamlValidatorTask extends DefaultTask {
             throw new GradleException(String.format(FILE_FAILURE_MESSAGE, file), e);
         }
 
-        System.out.println(String.format(FILE_SUCCESS_MESSAGE, file));
+        getLogger().info(String.format(FILE_SUCCESS_MESSAGE, file));
     }
 
     private Yaml yamlLoader() {
