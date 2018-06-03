@@ -7,6 +7,9 @@ apply plugin: "com.gradle.plugin-publish"
 
 sourceCompatibility = 1.8
 
+def lombokVersion = '1.16.22'
+def snakeyamlVersion = '1.19'
+
 buildscript {
     repositories {
         maven {
@@ -23,14 +26,14 @@ repositories {
 }
 
 dependencies {
-    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.16.22'
+    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: lombokVersion
 
     compile gradleApi()
-    compile group: 'org.yaml', name: 'snakeyaml', version: '1.19'
+    compile group: 'org.yaml', name: 'snakeyaml', version: snakeyamlVersion
 
-    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.16.22'
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: lombokVersion
 
-    runtime group: 'org.yaml', name: 'snakeyaml', version: '1.19'
+    runtime group: 'org.yaml', name: 'snakeyaml', version: snakeyamlVersion
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
