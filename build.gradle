@@ -23,6 +23,8 @@ repositories {
 }
 
 dependencies {
+    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.16.22'
+
     compile gradleApi()
     compile group: 'org.yaml', name: 'snakeyaml', version: '1.19'
 
