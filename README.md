@@ -16,7 +16,7 @@ buildscript {
     }
   }
   dependencies {
-    classpath "gradle.plugin.at.zierler:yaml-validator-plugin:1.4.2"
+    classpath "gradle.plugin.at.zierler:yaml-validator-plugin:1.5.0"
   }
 }
 
@@ -27,7 +27,7 @@ apply plugin: "at.zierler.yamlvalidator"
 
 ```groovy
 plugins {
-  id "at.zierler.yamlvalidator" version "1.4.2"
+  id "at.zierler.yamlvalidator" version "1.5.0"
 }
 ```
 
