@@ -488,7 +488,7 @@ public class YamlValidatorPluginIntTest {
         String expectedLineInOutput1 = String.format(YamlValidatorTask.STARTING_DIRECTORY_MESSAGE, defaultYamlDirectory.toPath().toRealPath());
         String expectedLineInOutput2 = String.format(YamlValidatorTask.STARTING_DIRECTORY_MESSAGE, anyYamlDirectory.toPath().toRealPath());
 
-        expectBuildSuccessAndAllOfFollowingLinesInOutput(expectedLineInOutput1, expectedLineInOutput2);
+        expectBuildSuccessWithLinesInOutput(expectedLineInOutput1, expectedLineInOutput2);
     }
 
     private void expectBuildSuccessAndRecursiveStartingMessageForBothDirectories() throws IOException {
@@ -496,7 +496,7 @@ public class YamlValidatorPluginIntTest {
         String expectedLineInOutput1 = String.format(YamlValidatorTask.STARTING_DIRECTORY_RECURSIVE_MESSAGE, defaultYamlDirectory.toPath().toRealPath());
         String expectedLineInOutput2 = String.format(YamlValidatorTask.STARTING_DIRECTORY_RECURSIVE_MESSAGE, anyYamlDirectory.toPath().toRealPath());
 
-        expectBuildSuccessAndAllOfFollowingLinesInOutput(expectedLineInOutput1, expectedLineInOutput2);
+        expectBuildSuccessWithLinesInOutput(expectedLineInOutput1, expectedLineInOutput2);
     }
 
     private void expectBuildSuccessAndSuccessMessageForBothFiles() throws IOException {
@@ -504,7 +504,7 @@ public class YamlValidatorPluginIntTest {
         String expectedLineInOutput1 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
         String expectedLineInOutput2 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFileInAnyYamlDirectory.toPath().toRealPath());
 
-        expectBuildSuccessAndAllOfFollowingLinesInOutput(expectedLineInOutput1, expectedLineInOutput2);
+        expectBuildSuccessWithLinesInOutput(expectedLineInOutput1, expectedLineInOutput2);
     }
     
     private void expectBuildSuccessAndSuccessMessageForYamlWithMulipleDocuments() throws IOException {
@@ -513,7 +513,7 @@ public class YamlValidatorPluginIntTest {
         String expectedLineInOutput2 = String.format(YamlValidatorTask.DOCUMENT_SUCCESS_MESSAGE, 1, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
         String expectedLineInOutput3 = String.format(YamlValidatorTask.DOCUMENT_SUCCESS_MESSAGE, 2, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
 
-        expectBuildSuccessAndAllOfFollowingLinesInOutput(expectedLineInOutput1, expectedLineInOutput2, expectedLineInOutput3);
+        expectBuildSuccessWithLinesInOutput(expectedLineInOutput1, expectedLineInOutput2, expectedLineInOutput3);
     }
     
     private void expectBuildFailureAndFailureMessageForYamlWithMulipleDocumentsWithErrorInSecondDocument() throws IOException {
@@ -521,7 +521,7 @@ public class YamlValidatorPluginIntTest {
         String expectedLineInOutput1 = String.format(YamlValidatorTask.FILE_FAILURE_MESSAGE, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
         String expectedLineInOutput2 = String.format(YamlValidatorTask.DOCUMENT_SUCCESS_MESSAGE, 1, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
 
-        expectBuildFailureAndAllOfFollowingLinesInOutput(expectedLineInOutput1, expectedLineInOutput2);
+        expectBuildFailureWithLinesInOutput(expectedLineInOutput1, expectedLineInOutput2);
     }
     
     private void expectBuildFailureAndFailureMessageForYamlWithMulipleDocumentsWithErrorInLastDocument() throws IOException {
@@ -530,7 +530,7 @@ public class YamlValidatorPluginIntTest {
         String expectedLineInOutput2 = String.format(YamlValidatorTask.DOCUMENT_SUCCESS_MESSAGE, 1, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
         String expectedLineInOutput3 = String.format(YamlValidatorTask.DOCUMENT_SUCCESS_MESSAGE, 2, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
 
-        expectBuildFailureAndAllOfFollowingLinesInOutput(expectedLineInOutput1, expectedLineInOutput2, expectedLineInOutput3);
+        expectBuildFailureWithLinesInOutput(expectedLineInOutput1, expectedLineInOutput2, expectedLineInOutput3);
     }
 
     private void expectBuildSuccessAndSuccessMessageForDefaultFileAndFileInSubdirectory(File yamlFileInSubdirectoryInDefaultYamlDirectory) throws IOException {
@@ -538,7 +538,7 @@ public class YamlValidatorPluginIntTest {
         String expectedLineInOutput1 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
         String expectedLineInOutput2 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFileInSubdirectoryInDefaultYamlDirectory.toPath().toRealPath());
 
-        expectBuildSuccessAndAllOfFollowingLinesInOutput(expectedLineInOutput1, expectedLineInOutput2);
+        expectBuildSuccessWithLinesInOutput(expectedLineInOutput1, expectedLineInOutput2);
     }
 
     private void expectBuildSuccessAndSuccessMessageForDefaultFileAndNoMessageForFileInSubdirectory(File yamlFileInSubdirectoryOfDefaultYamlDirectory) throws IOException {
@@ -574,18 +574,24 @@ public class YamlValidatorPluginIntTest {
         expectBuildSuccessAndOutputButNotOtherOutput(expectedLineInOutput, unexpectedLineInOutput);
     }
 
-    private void expectBuildSuccessAndAllOfFollowingLinesInOutput(String... expectedLinesInOutput) {
+    private void expectBuildSuccessWithLinesInOutput(String... expectedLinesInOutput) {
 
         String output = runYamlValidateTaskAndGetOutput();
 
-        Arrays.stream(expectedLinesInOutput).forEach(expectedLineInOutput -> assertThat(output, containsString(expectedLineInOutput)));
+        expectLinesInOutput(output, expectedLinesInOutput);
     }
     
-    private void expectBuildFailureAndAllOfFollowingLinesInOutput(String... expectedLinesInOutput) {
+    private void expectBuildFailureWithLinesInOutput(String... expectedLinesInOutput) {
 
         String output = runYamlValidateTaskExpectedToFailAndGetOutput();
 
-        Arrays.stream(expectedLinesInOutput).forEach(expectedLineInOutput -> assertThat(output, containsString(expectedLineInOutput)));
+        expectLinesInOutput(output, expectedLinesInOutput);
+    }
+
+    private void expectLinesInOutput(String output, String[] expectedLinesInOutput) {
+
+        Arrays.stream(expectedLinesInOutput)
+                .forEach(expectedLineInOutput -> assertThat(output, containsString(expectedLineInOutput)));
     }
 
     private void expectBuildSuccessAndOutputButNotOtherOutput(String expectedLineInOutput, String unexpectedLineInOutput) {
