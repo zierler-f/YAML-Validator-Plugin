@@ -510,8 +510,8 @@ public class YamlValidatorPluginIntTest {
     private void expectBuildSuccessAndSuccessMessageForYamlWithMulipleDocuments() throws IOException {
 
         String expectedLineInOutput1 = String.format(YamlValidatorTask.FILE_SUCCESS_MESSAGE, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
-        String expectedLineInOutput2 = String.format(YamlValidatorTask.DOCUMENT_VALID_MESSAGE, 1, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
-        String expectedLineInOutput3 = String.format(YamlValidatorTask.DOCUMENT_VALID_MESSAGE, 2, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
+        String expectedLineInOutput2 = String.format(YamlValidatorTask.DOCUMENT_SUCCESS_MESSAGE, 1, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
+        String expectedLineInOutput3 = String.format(YamlValidatorTask.DOCUMENT_SUCCESS_MESSAGE, 2, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
 
         expectBuildSuccessAndAllOfFollowingLinesInOutput(expectedLineInOutput1, expectedLineInOutput2, expectedLineInOutput3);
     }
@@ -519,7 +519,7 @@ public class YamlValidatorPluginIntTest {
     private void expectBuildFailureAndFailureMessageForYamlWithMulipleDocumentsWithErrorInSecondDocument() throws IOException {
 
         String expectedLineInOutput1 = String.format(YamlValidatorTask.FILE_FAILURE_MESSAGE, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
-        String expectedLineInOutput2 = String.format(YamlValidatorTask.DOCUMENT_VALID_MESSAGE, 1, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
+        String expectedLineInOutput2 = String.format(YamlValidatorTask.DOCUMENT_SUCCESS_MESSAGE, 1, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
 
         expectBuildFailureAndAllOfFollowingLinesInOutput(expectedLineInOutput1, expectedLineInOutput2);
     }
@@ -527,8 +527,8 @@ public class YamlValidatorPluginIntTest {
     private void expectBuildFailureAndFailureMessageForYamlWithMulipleDocumentsWithErrorInLastDocument() throws IOException {
 
         String expectedLineInOutput1 = String.format(YamlValidatorTask.FILE_FAILURE_MESSAGE, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
-        String expectedLineInOutput2 = String.format(YamlValidatorTask.DOCUMENT_VALID_MESSAGE, 1, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
-        String expectedLineInOutput3 = String.format(YamlValidatorTask.DOCUMENT_VALID_MESSAGE, 2, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
+        String expectedLineInOutput2 = String.format(YamlValidatorTask.DOCUMENT_SUCCESS_MESSAGE, 1, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
+        String expectedLineInOutput3 = String.format(YamlValidatorTask.DOCUMENT_SUCCESS_MESSAGE, 2, yamlFileInDefaultYamlDirectory.toPath().toRealPath());
 
         expectBuildFailureAndAllOfFollowingLinesInOutput(expectedLineInOutput1, expectedLineInOutput2, expectedLineInOutput3);
     }

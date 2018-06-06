@@ -16,9 +16,9 @@ public class YamlValidatorTask extends DefaultTask {
     static final String STARTING_DIRECTORY_MESSAGE = "Starting validation of YAML files in directory '%s'.";
     static final String STARTING_DIRECTORY_RECURSIVE_MESSAGE = "Starting validation of YAML files in directory '%s' recursively.";
     static final String STARTING_FILE_MESSAGE = "Starting validation of YAML file '%s'.";
+    static final String DOCUMENT_SUCCESS_MESSAGE = "Validation of document #%s in file %s successful.";
     static final String FILE_SUCCESS_MESSAGE = "Validation of YAML file '%s' successful.";
     static final String FILE_FAILURE_MESSAGE = "Validation of YAML file '%s' failed.";
-    static final String DOCUMENT_VALID_MESSAGE = "Document %d of '%s' is valid";
 
     private final ValidationProperties validationProperties;
     private Yaml yaml;
@@ -99,18 +99,24 @@ public class YamlValidatorTask extends DefaultTask {
     private void validateYamlFile(Path file) {
 
         getLogger().info(String.format(STARTING_FILE_MESSAGE, file));
-        int index = 1;
 
         try (InputStream yamlFileInputStream = Files.newInputStream(file)) {
-        	index = 1;
-            for(@SuppressWarnings("unused") Object document : yamlLoader().loadAll(yamlFileInputStream)){
-            	getLogger().info(String.format(DOCUMENT_VALID_MESSAGE, index++, file));
-            }
+            validateAllDocuments(yamlFileInputStream, file);
         } catch (Exception e) {
             throw new GradleException(String.format(FILE_FAILURE_MESSAGE, file), e);
         }
 
         getLogger().info(String.format(FILE_SUCCESS_MESSAGE, file));
+    }
+
+    @SuppressWarnings("unused")
+    private void validateAllDocuments(InputStream yamlFileInputStream, Path file) {
+
+        int documentIndex = 0;
+
+        for(Object document : yamlLoader().loadAll(yamlFileInputStream)){
+            getLogger().info(String.format(DOCUMENT_SUCCESS_MESSAGE, ++documentIndex, file));
+        }
     }
 
     private Yaml yamlLoader() {
